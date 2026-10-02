@@ -1,8 +1,8 @@
 // Paste this into Extensions > Apps Script of your Google Sheet, then deploy as a Web App.
 const RSVP_SHEET = 'RSVP';
 const WISH_SHEET = 'Wishes';
-const RSVP_HEADERS = ['Timestamp', 'Name', 'Attending', 'Guests', 'Note', 'Invite link name'];
-const WISH_HEADERS = ['Timestamp', 'Name', 'Message', 'Hidden'];
+const RSVP_HEADERS = ['Thời gian', 'Tên', 'Tham dự', 'Ghi chú', 'Tên trong link mời'];
+const WISH_HEADERS = ['Thời gian', 'Tên', 'Lời chúc', 'Ẩn'];
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -14,12 +14,10 @@ function doPost(e) {
     if (data.type === 'rsvp') {
       const name = clean(data.name, 100);
       if (!name) return json({ ok: false, error: 'Name required' });
-      const attending = data.attending === 'yes';
       getSheet(ss, RSVP_SHEET, RSVP_HEADERS).appendRow([
         new Date(),
         name,
-        attending ? 'Yes' : 'No',
-        attending ? Math.min(10, Math.max(1, Number(data.guests) || 1)) : 0,
+        data.attending === 'yes' ? 'Có' : 'Không',
         clean(data.note, 500),
         clean(data.invitedAs, 40),
       ]);

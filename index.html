@@ -1,16 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Graduation Invitation</title>
-  <meta name="description" content="You're invited to my graduation!" />
+  <title>Thiệp mời tốt nghiệp</title>
+  <meta name="description" content="Mời bạn đến dự lễ tốt nghiệp của mình!" />
+  <meta name="theme-color" content="#fde8f0" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Thiệp mời tốt nghiệp" />
+  <meta property="og:description" content="Mình có một lá thư mời dành riêng cho bạn. Mở ra xem nhé!" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,20 95,38 50,56 5,38' fill='%235b5390'/%3E%3Cpath d='M28 47v18c0 9 44 9 44 0V47L50 56z' fill='%234a4470'/%3E%3Cpath d='M50 38l30 8v22' stroke='%23ffc23d' stroke-width='5' fill='none'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600..700&family=Dancing+Script:wght@500..700&family=Quicksand:wght@400..700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
+<body class="gated">
+  <!-- NAME GATE -->
+  <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+    <div class="gate-card">
+      <svg class="gate-cap" viewBox="0 0 200 140" width="110" height="77" aria-hidden="true">
+        <path d="M55 70 v28 c0 14 90 14 90 0 v-28" fill="#4a4470" />
+        <polygon points="100,30 190,62 100,94 10,62" fill="#5b5390" />
+        <polygon points="100,30 190,62 100,70 10,62" fill="#6e65a8" />
+        <circle cx="100" cy="62" r="6" fill="#ffd36e" />
+        <g class="tassel">
+          <path d="M100 62 Q150 70 160 78" stroke="#ffd36e" stroke-width="4" fill="none" stroke-linecap="round" />
+          <line x1="160" y1="78" x2="160" y2="108" stroke="#ffd36e" stroke-width="4" stroke-linecap="round" />
+          <path d="M153 106 h14 l-3 16 h-8 z" fill="#ffc23d" />
+        </g>
+      </svg>
+      <h2 class="gate-title" id="gateTitle">Xin chào!</h2>
+      <p class="gate-text">Mình có một lá thư mời dành riêng cho bạn.<br />Cho mình biết tên bạn nhé?</p>
+      <form id="gateForm" novalidate>
+        <input type="text" id="gateName" maxlength="40" placeholder="Tên của bạn" autocomplete="given-name" required />
+        <p class="form-error" id="gateError" role="alert"></p>
+        <button type="submit" class="btn btn-primary btn-block">Mở thiệp của mình</button>
+      </form>
+    </div>
+  </div>
+
   <div class="sky" aria-hidden="true">
     <span class="cloud c1"></span>
     <span class="cloud c2"></span>
@@ -29,7 +59,7 @@
 
     <div class="hero-inner">
       <div class="cap-wrap" aria-hidden="true">
-        <img class="hero-photo" id="heroPhoto" alt="" hidden />
+        <img class="hero-photo" id="heroPhoto" alt="" width="150" height="150" decoding="async" hidden />
         <svg class="cap" viewBox="0 0 200 140" width="200" height="140">
           <ellipse cx="100" cy="128" rx="60" ry="8" fill="#3d3a5c" opacity=".12" />
           <path d="M55 70 v28 c0 14 90 14 90 0 v-28" fill="#4a4470" />
@@ -44,36 +74,39 @@
         </svg>
       </div>
 
-      <p class="eyebrow">You're invited to celebrate</p>
-      <h1 class="title" id="heroTitle" aria-label="Graduation Day">Graduation Day</h1>
+      <p class="hero-hello" id="heroHello"></p>
+      <p class="eyebrow">Trân trọng mời bạn đến chung vui</p>
+      <h1 class="title" id="heroTitle" aria-label="Lễ Tốt Nghiệp">Lễ Tốt Nghiệp</h1>
       <p class="hero-name"><span id="graduateName"></span></p>
       <p class="hero-sub"><span id="major"></span><span class="dot" id="majorDot">•</span><span id="school"></span></p>
-      <p class="class-of">Class of <span id="classOf"></span></p>
+      <p class="class-of">Khóa <span id="classOf"></span></p>
 
-      <a href="#letter" class="btn btn-primary bounce">Open your invitation</a>
+      <a href="#letter" class="btn btn-primary bounce">Mở thiệp mời</a>
+      <p><button type="button" class="link-btn" id="changeName">Không phải bạn? Đổi tên</button></p>
     </div>
-    <a href="#letter" class="scroll-hint" aria-label="Scroll down"><span></span></a>
+    <a href="#letter" class="scroll-hint" aria-label="Cuộn xuống"><span></span></a>
   </header>
 
   <main>
     <!-- LETTER -->
     <section id="letter" class="section letter-section">
-      <h2 class="section-title reveal">A little letter for you</h2>
-      <p class="section-sub reveal">Tap the envelope to open it</p>
+      <h2 class="section-title reveal">Gửi bạn một lá thư nhỏ</h2>
+      <p class="section-sub reveal">Chạm vào phong bì để mở thư nhé</p>
 
       <div class="envelope-stage reveal">
-        <button class="envelope" id="envelope" type="button" aria-label="Open the invitation letter">
+        <button class="envelope" id="envelope" type="button" aria-label="Mở thư mời">
           <span class="env-back"></span>
           <span class="env-paper"><span class="env-paper-lines"></span></span>
           <span class="env-front"></span>
           <span class="env-flap"></span>
+          <span class="env-to">Gửi: <b id="envTo"></b></span>
           <span class="env-seal">
             <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#fff" d="M12 21s-7.5-4.6-9.5-9.2C1 8.3 3.3 5 6.6 5c2 0 3.6 1.1 4.4 2.6h2C13.8 6.1 15.4 5 17.4 5 20.7 5 23 8.3 21.5 11.8 19.5 16.4 12 21 12 21z"/></svg>
           </span>
         </button>
 
         <article class="letter-card" id="letterCard" aria-live="polite">
-          <p class="letter-greeting">Dear <span id="recipient"></span>,</p>
+          <p class="letter-greeting">Gửi <span id="recipient"></span>,</p>
           <div id="letterBody"></div>
           <p class="letter-signoff" id="signOff"></p>
           <p class="letter-signature" id="signature"></p>
@@ -86,13 +119,13 @@
 
     <!-- DETAILS -->
     <section id="details" class="section">
-      <h2 class="section-title reveal">Save the date</h2>
+      <h2 class="section-title reveal">Lưu lại ngày này nhé</h2>
 
       <div class="countdown reveal" id="countdown">
-        <div class="cd-box"><span class="cd-num" id="cdDays">--</span><span class="cd-label">days</span></div>
-        <div class="cd-box"><span class="cd-num" id="cdHours">--</span><span class="cd-label">hours</span></div>
-        <div class="cd-box"><span class="cd-num" id="cdMins">--</span><span class="cd-label">mins</span></div>
-        <div class="cd-box"><span class="cd-num" id="cdSecs">--</span><span class="cd-label">secs</span></div>
+        <div class="cd-box"><span class="cd-num" id="cdDays">--</span><span class="cd-label">ngày</span></div>
+        <div class="cd-box"><span class="cd-num" id="cdHours">--</span><span class="cd-label">giờ</span></div>
+        <div class="cd-box"><span class="cd-num" id="cdMins">--</span><span class="cd-label">phút</span></div>
+        <div class="cd-box"><span class="cd-num" id="cdSecs">--</span><span class="cd-label">giây</span></div>
       </div>
       <p class="cd-message reveal" id="cdMessage"></p>
 
@@ -101,7 +134,7 @@
           <div class="info-icon">
             <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
           </div>
-          <h3>When</h3>
+          <h3>Thời gian</h3>
           <p id="eventDate"></p>
           <p class="muted" id="eventTime"></p>
         </div>
@@ -109,16 +142,16 @@
           <div class="info-icon">
             <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
           </div>
-          <h3>Where</h3>
+          <h3>Địa điểm</h3>
           <p id="venueName"></p>
           <p class="muted" id="venueAddress"></p>
-          <a class="map-link" id="mapLink" target="_blank" rel="noopener" hidden>Open in Maps</a>
+          <a class="map-link" id="mapLink" target="_blank" rel="noopener" hidden>Xem bản đồ</a>
         </div>
         <div class="info-card reveal" style="--accent: var(--mint)" id="dressCard">
           <div class="info-icon">
             <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l3 3-3 3-3-3z"/><path d="M5 21l2-11h10l2 11z"/></svg>
           </div>
-          <h3>Dress code</h3>
+          <h3>Trang phục</h3>
           <p id="dressCode"></p>
         </div>
       </div>
@@ -126,101 +159,142 @@
 
     <!-- RSVP -->
     <section id="rsvp" class="section">
-      <h2 class="section-title reveal">Will you come?</h2>
-      <p class="section-sub reveal" id="rsvpSub">Let me know so I can save you a spot</p>
+      <h2 class="section-title reveal">Bạn sẽ đến chứ?</h2>
+      <p class="section-sub reveal" id="rsvpSub">Báo cho mình biết để mình giữ chỗ cho bạn nhé</p>
 
       <form class="form-card reveal" id="rsvpForm" novalidate>
         <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
 
         <label class="field">
-          <span>Your name</span>
-          <input type="text" name="name" id="rsvpName" maxlength="100" required placeholder="e.g. Minh Anh" />
+          <span>Tên của bạn</span>
+          <input type="text" name="name" id="rsvpName" maxlength="100" required placeholder="VD: Minh Anh" />
         </label>
 
         <fieldset class="choice-group">
-          <legend>Can you make it?</legend>
+          <legend>Bạn có đến được không?</legend>
           <label class="choice">
             <input type="radio" name="attending" value="yes" checked />
             <span class="choice-card yes">
               <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-              Count me in!
+              Mình sẽ đến!
             </span>
           </label>
           <label class="choice">
             <input type="radio" name="attending" value="no" />
             <span class="choice-card no">
               <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 15s1.5-2 4-2 4 2 4 2M9 9h.01M15 9h.01"/></svg>
-              Sadly, I can't
+              Tiếc quá, mình bận rồi
             </span>
           </label>
         </fieldset>
 
-        <label class="field" id="guestsField">
-          <span>How many people (including you)?</span>
-          <div class="stepper">
-            <button type="button" class="step" data-step="-1" aria-label="Decrease">−</button>
-            <input type="number" name="guests" id="guests" value="1" min="1" max="10" inputmode="numeric" />
-            <button type="button" class="step" data-step="1" aria-label="Increase">+</button>
-          </div>
-        </label>
-
         <label class="field">
-          <span>Anything I should know? <em>(optional)</em></span>
-          <textarea name="note" rows="3" maxlength="500" placeholder="Arriving late, dietary needs, ..."></textarea>
+          <span>Bạn muốn nhắn gì thêm không? <em>(không bắt buộc)</em></span>
+          <textarea name="note" rows="3" maxlength="500" placeholder="Đến muộn một chút, ăn chay, ..."></textarea>
         </label>
 
         <p class="form-error" id="rsvpError" role="alert"></p>
-        <button type="submit" class="btn btn-primary btn-block">Send my answer</button>
-        <p class="privacy-note">Only I can see your answer.</p>
+        <button type="submit" class="btn btn-primary btn-block">Gửi câu trả lời</button>
+        <p class="privacy-note">Chỉ mình mình xem được câu trả lời của bạn.</p>
       </form>
 
       <div class="form-card thanks-card" id="rsvpThanks" hidden>
         <div class="thanks-emoji" aria-hidden="true">
           <svg viewBox="0 0 64 64" width="72" height="72"><circle cx="32" cy="32" r="28" fill="#ffd36e"/><circle cx="23" cy="27" r="3.5" fill="#3d3a5c"/><circle cx="41" cy="27" r="3.5" fill="#3d3a5c"/><path d="M20 38q12 12 24 0" stroke="#3d3a5c" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="16" cy="36" r="4" fill="#ff9fb8" opacity=".7"/><circle cx="48" cy="36" r="4" fill="#ff9fb8" opacity=".7"/></svg>
         </div>
-        <h3 id="thanksTitle">Thank you!</h3>
+        <h3 id="thanksTitle">Cảm ơn bạn!</h3>
         <p id="thanksText"></p>
-        <button type="button" class="btn btn-ghost" id="rsvpEdit">Change my answer</button>
+        <button type="button" class="btn btn-ghost" id="rsvpEdit">Đổi câu trả lời</button>
       </div>
     </section>
 
     <!-- WISHES -->
     <section id="wishes" class="section">
-      <h2 class="section-title reveal">Leave me a wish</h2>
-      <p class="section-sub reveal">A few kind words mean the world to me</p>
+      <h2 class="section-title reveal">Gửi lời chúc cho mình</h2>
+      <p class="section-sub reveal">Vài lời chúc nhỏ của bạn là món quà lớn với mình</p>
 
       <form class="form-card wish-form reveal" id="wishForm" novalidate>
         <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <label class="field">
-          <span>Your name</span>
+          <span>Tên của bạn</span>
           <input type="text" name="name" id="wishName" maxlength="60" required />
         </label>
         <label class="field">
-          <span>Your wish</span>
-          <textarea name="message" rows="3" maxlength="300" required placeholder="Congratulations! ..."></textarea>
+          <span>Lời chúc của bạn</span>
+          <textarea name="message" rows="3" maxlength="300" required placeholder="Chúc mừng tốt nghiệp! ..."></textarea>
         </label>
         <p class="form-error" id="wishError" role="alert"></p>
-        <button type="submit" class="btn btn-primary btn-block">Pin my wish</button>
+        <button type="submit" class="btn btn-primary btn-block">Gửi lời chúc</button>
       </form>
 
       <div class="wall" id="wall" aria-live="polite"></div>
-      <p class="wall-empty" id="wallEmpty" hidden>No wishes yet — be the first!</p>
+      <p class="wall-empty" id="wallEmpty" hidden>Chưa có lời chúc nào — bạn hãy là người đầu tiên nhé!</p>
     </section>
   </main>
 
   <footer class="footer">
-    <p>Made with love by <span id="footerName"></span></p>
+    <p>Được làm bằng cả trái tim bởi <span id="footerName"></span></p>
   </footer>
 
-  <button class="music-btn" id="musicBtn" type="button" aria-label="Play music" hidden>
+  <button class="music-btn" id="musicBtn" type="button" aria-label="Bật nhạc" hidden>
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
   </button>
   <audio id="music" loop preload="none"></audio>
 
+  <!-- WALKING STUDENT -->
+  <div class="buddy" id="buddy" aria-hidden="true">
+    <div class="buddy-bubble" id="buddyBubble"></div>
+    <svg class="buddy-svg" viewBox="0 0 100 150" width="90" height="135">
+      <ellipse cx="50" cy="146" rx="26" ry="4" fill="#3d3a5c" opacity=".15" />
+      <g class="buddy-jump">
+        <g class="buddy-body">
+          <g class="leg leg-l"><rect x="38" y="110" width="9" height="28" rx="4" fill="#3d3a5c" /><ellipse cx="41" cy="139" rx="8" ry="4.5" fill="#2b2843" /></g>
+          <g class="leg leg-r"><rect x="53" y="110" width="9" height="28" rx="4" fill="#3d3a5c" /><ellipse cx="59" cy="139" rx="8" ry="4.5" fill="#2b2843" /></g>
+          <g class="arm arm-l"><rect x="23" y="74" width="10" height="30" rx="5" fill="#5b5390" /><circle cx="28" cy="105" r="5.5" fill="#ffd9b8" /></g>
+          <path d="M32 72 Q50 64 68 72 L74 120 Q50 126 26 120 Z" fill="#6e65a8" />
+          <path d="M42 70 L50 82 L58 70 Z" fill="#fff" />
+          <path d="M50 82 V120" stroke="#5b5390" stroke-width="2" />
+          <g class="arm arm-r">
+            <rect x="67" y="74" width="10" height="30" rx="5" fill="#5b5390" />
+            <rect x="62" y="100" width="22" height="7" rx="3.5" fill="#fffdf8" stroke="#e8dcc0" />
+            <rect x="71" y="100" width="3.5" height="7" fill="#f48fb1" />
+            <circle cx="72" cy="105" r="5.5" fill="#ffd9b8" />
+          </g>
+          <g class="head">
+            <circle cx="28" cy="50" r="5" fill="#ffd9b8" />
+            <circle cx="72" cy="50" r="5" fill="#ffd9b8" />
+            <circle cx="50" cy="48" r="22" fill="#ffe1c6" />
+            <path d="M28 46 Q29 26 50 26 Q71 26 72 46 Q66 36 56 37 Q48 32 40 39 Q33 39 28 46Z" fill="#3b2a24" />
+            <g class="eyes" id="buddyEyes">
+              <g class="blink">
+                <ellipse cx="42" cy="51" rx="3" ry="3.6" fill="#2b2843" />
+                <ellipse cx="58" cy="51" rx="3" ry="3.6" fill="#2b2843" />
+                <circle cx="43" cy="49.6" r="1.1" fill="#fff" />
+                <circle cx="59" cy="49.6" r="1.1" fill="#fff" />
+              </g>
+            </g>
+            <circle cx="36" cy="58" r="3.5" fill="#ff9fb8" opacity=".7" />
+            <circle cx="64" cy="58" r="3.5" fill="#ff9fb8" opacity=".7" />
+            <path class="mouth" d="M45 60 Q50 65 55 60" stroke="#2b2843" stroke-width="2" fill="none" stroke-linecap="round" />
+            <path d="M34 30 v8 q16 6 32 0 v-8" fill="#4a4470" />
+            <polygon points="50,14 82,26 50,36 18,26" fill="#5b5390" />
+            <polygon points="50,14 82,26 50,29 18,26" fill="#6e65a8" />
+            <circle cx="50" cy="25" r="2.5" fill="#ffd36e" />
+            <g class="buddy-tassel">
+              <path d="M50 25 Q70 28 76 30 L76 44" stroke="#ffd36e" stroke-width="2.5" fill="none" stroke-linecap="round" />
+              <rect x="73" y="43" width="6" height="7" rx="1.5" fill="#ffc23d" />
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+  </div>
+
   <div class="toast" id="toast" role="status"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/main.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script defer src="js/config.js"></script>
+  <script defer src="js/music.js"></script>
+  <script defer src="js/main.js"></script>
 </body>
 </html>

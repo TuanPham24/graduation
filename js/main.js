@@ -4,8 +4,10 @@
   const C = window.GRAD_CONFIG || {};
   const ev = C.event || {};
   const $ = (id) => document.getElementById(id);
-  const TBA = "Coming soon";
+  const TBA = "Sắp công bố";
   const DEMO = !C.appsScriptUrl;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let buddy = null;
 
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
@@ -27,33 +29,24 @@
 
   // ---------- Fill content ----------
   function fillContent() {
-    const recipient = getRecipient();
-
     setText("graduateName", C.graduateName);
     setText("major", C.major);
     setText("school", C.school);
     if (!C.major || !C.school) $("majorDot").hidden = true;
     setText("classOf", C.classOf, "");
-    setText("footerName", C.graduateName || "me");
+    setText("footerName", C.graduateName || "mình");
     setText("stampYear", C.classOf, "");
-    if (C.graduateName) document.title = `${C.graduateName}'s Graduation`;
+    if (C.graduateName) document.title = `Lễ tốt nghiệp của ${C.graduateName}`;
 
     if (C.photo) {
       const img = $("heroPhoto");
       img.src = C.photo;
-      img.alt = C.graduateName || "Graduate photo";
+      img.alt = C.graduateName || "Ảnh tốt nghiệp";
       img.hidden = false;
       img.parentElement.classList.add("has-photo");
     }
 
     const L = C.letter || {};
-    setText("recipient", recipient || L.defaultRecipient || "friend");
-    const body = $("letterBody");
-    (L.paragraphs || []).forEach((text) => {
-      const p = document.createElement("p");
-      p.textContent = text;
-      body.appendChild(p);
-    });
     setText("signOff", L.signOff);
     setText("signature", C.graduateName);
 
@@ -68,12 +61,90 @@
     if (ev.dressCode) setText("dressCode", ev.dressCode);
     else $("dressCard").hidden = true;
 
-    if (C.rsvpDeadline) $("rsvpSub").textContent = `Please let me know by ${C.rsvpDeadline}`;
+    if (C.rsvpDeadline) $("rsvpSub").textContent = `Bạn báo cho mình trước ngày ${C.rsvpDeadline} nhé`;
+  }
 
-    if (recipient) {
-      $("rsvpName").value = recipient;
-      $("wishName").value = recipient;
+  // ---------- Personal letter ----------
+  const normalize = (s) =>
+    String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase().trim().replace(/\s+/g, " ");
+
+  function findPersonalNote(name) {
+    const notes = (C.letter && C.letter.personalNotes) || {};
+    const key = normalize(name);
+    const match = Object.keys(notes).find((k) => normalize(k) === key);
+    return match ? notes[match] : "";
+  }
+
+  let guestName = "";
+
+  function applyGuest(name) {
+    guestName = name;
+    const L = C.letter || {};
+    const shown = name || L.defaultRecipient || "bạn";
+    $("recipient").textContent = shown;
+    $("envTo").textContent = shown;
+    $("heroHello").textContent = name ? `Xin chào, ${name}!` : "";
+
+    const body = $("letterBody");
+    body.textContent = "";
+    (L.paragraphs || []).forEach((text) => {
+      const p = document.createElement("p");
+      p.textContent = text.split("{name}").join(shown);
+      body.appendChild(p);
+    });
+    const ps = name && findPersonalNote(name);
+    if (ps) {
+      const p = document.createElement("p");
+      p.className = "letter-ps";
+      p.textContent = `P.S. ${ps}`;
+      body.appendChild(p);
     }
+
+    if (name) {
+      $("rsvpName").value = name;
+      $("wishName").value = name;
+    }
+  }
+
+  // ---------- Name gate ----------
+  function setupGate(onEnter) {
+    const gate = $("gate");
+    const form = $("gateForm");
+    const input = $("gateName");
+    const err = $("gateError");
+
+    const open = () => {
+      input.value = guestName || store.get("guestName") || getRecipient();
+      gate.classList.remove("leaving");
+      gate.hidden = false;
+      document.body.classList.add("gated");
+      setTimeout(() => input.focus(), 300);
+    };
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = input.value.trim().replace(/\s+/g, " ").slice(0, 40)
+        .split(" ").map((w) => w.charAt(0).toLocaleUpperCase("vi") + w.slice(1)).join(" ");
+      if (!name) {
+        err.textContent = "Bạn nhập tên giúp mình nhé!";
+        form.classList.remove("shake");
+        void form.offsetWidth;
+        form.classList.add("shake");
+        return;
+      }
+      err.textContent = "";
+      store.set("guestName", name);
+      applyGuest(name);
+      gate.classList.add("leaving");
+      document.body.classList.remove("gated");
+      setTimeout(() => { gate.hidden = true; }, 800);
+      onEnter(name);
+    });
+
+    $("changeName").addEventListener("click", open);
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    window.scrollTo(0, 0);
+    open();
   }
 
   // ---------- Hero title letter animation ----------
@@ -93,7 +164,8 @@
 
   function makeStars() {
     const box = document.querySelector(".stars");
-    for (let i = 0; i < 22; i++) {
+    const count = window.innerWidth < 600 ? 10 : 20;
+    for (let i = 0; i < count; i++) {
       const s = document.createElement("span");
       s.className = "star";
       s.style.left = `${Math.random() * 100}%`;
@@ -112,6 +184,10 @@
       items.forEach((el) => el.classList.add("in"));
       return;
     }
+    // Pause the hero's looping animations once it's scrolled out of view.
+    const hero = document.querySelector(".hero");
+    new IntersectionObserver(([e]) => hero.classList.toggle("offscreen", !e.isIntersecting)).observe(hero);
+
     const io = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
         if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
@@ -151,7 +227,7 @@
     const target = ev.dateTime ? new Date(ev.dateTime) : null;
     const msg = $("cdMessage");
     if (!target || isNaN(target)) {
-      msg.textContent = "The date is still a secret — check back soon!";
+      msg.textContent = "Ngày tổ chức vẫn còn là bí mật — bạn quay lại sau nhé!";
       return;
     }
     const pad = (n) => String(n).padStart(2, "0");
@@ -159,7 +235,7 @@
       const diff = target - Date.now();
       if (diff <= 0) {
         ["cdDays", "cdHours", "cdMins", "cdSecs"].forEach((id) => ($(id).textContent = "00"));
-        msg.textContent = diff > -86400000 ? "It's today! See you there!" : "Thank you for celebrating with me!";
+        msg.textContent = diff > -86400000 ? "Chính là hôm nay! Gặp bạn ở đó nhé!" : "Cảm ơn bạn đã cùng mình chung vui!";
         clearInterval(timer);
         return;
       }
@@ -189,8 +265,8 @@
   async function loadWishes() {
     if (DEMO) {
       return [
-        { name: "Demo friend", message: "Congratulations! So proud of you!" },
-        { name: "Another friend", message: "You did it! Can't wait to celebrate." },
+        { name: "Bạn demo", message: "Chúc mừng tốt nghiệp! Tự hào về bạn lắm!" },
+        { name: "Một người bạn", message: "Cuối cùng cũng ra trường rồi! Hẹn gặp ở buổi lễ nha." },
       ];
     }
     const res = await fetch(C.appsScriptUrl);
@@ -219,25 +295,13 @@
     const form = $("rsvpForm");
     const thanks = $("rsvpThanks");
     const err = $("rsvpError");
-    const guests = $("guests");
-    const guestsField = $("guestsField");
-
-    const clampGuests = (v) => Math.min(10, Math.max(1, parseInt(v, 10) || 1));
-    form.querySelectorAll(".step").forEach((b) =>
-      b.addEventListener("click", () => { guests.value = clampGuests(+guests.value + +b.dataset.step); })
-    );
-    guests.addEventListener("change", () => { guests.value = clampGuests(guests.value); });
-
-    form.addEventListener("change", (e) => {
-      if (e.target.name === "attending") guestsField.hidden = e.target.value !== "yes";
-    });
 
     function showThanks(answer) {
       const yes = answer.attending === "yes";
-      $("thanksTitle").textContent = yes ? `Yay, see you there, ${answer.name}!` : `Thank you, ${answer.name}!`;
+      $("thanksTitle").textContent = yes ? `Yay, hẹn gặp ${answer.name} nhé!` : `Cảm ơn ${answer.name} nhiều!`;
       $("thanksText").textContent = yes
-        ? `I've saved ${answer.guests > 1 ? answer.guests + " spots" : "a spot"} for you. Can't wait!`
-        : "I'll miss you, but I really appreciate you letting me know.";
+        ? "Mình đã giữ chỗ cho bạn rồi. Mong gặp bạn lắm!"
+        : "Tiếc quá, nhưng cảm ơn bạn đã báo cho mình biết nha.";
       form.hidden = true;
       thanks.hidden = false;
     }
@@ -260,26 +324,27 @@
         type: "rsvp",
         name: String(fd.get("name") || "").trim(),
         attending: fd.get("attending"),
-        guests: fd.get("attending") === "yes" ? clampGuests(fd.get("guests")) : 0,
         note: String(fd.get("note") || "").trim(),
         invitedAs: getRecipient(),
       };
-      if (!answer.name) return fail(form, err, "Please tell me your name.");
+      if (!answer.name) return fail(form, err, "Bạn cho mình biết tên nhé.");
 
       const btn = form.querySelector('button[type="submit"]');
       btn.disabled = true;
-      btn.textContent = "Sending...";
+      btn.textContent = "Đang gửi...";
       try {
         await send(answer);
-        store.set("rsvp", answer);
+        if (DEMO) toast("Chế độ demo: chưa kết nối Google Sheet nên câu trả lời chưa được lưu.");
+        else store.set("rsvp", answer);
         showThanks(answer);
         celebrate(answer.attending === "yes");
+        if (buddy) buddy.react(answer.attending === "yes" ? "Yay! Hẹn gặp bạn nha!" : "Huhu, tiếc ghê...", answer.attending === "yes");
       } catch (ex) {
         console.error(ex);
-        fail(form, err, "Oops, something went wrong. Please try again.");
+        fail(form, err, "Ối, có lỗi rồi. Bạn thử lại giúp mình nhé.");
       } finally {
         btn.disabled = false;
-        btn.textContent = "Send my answer";
+        btn.textContent = "Gửi câu trả lời";
       }
     });
   }
@@ -327,50 +392,230 @@
         name: String(fd.get("name") || "").trim(),
         message: String(fd.get("message") || "").trim(),
       };
-      if (!wish.name || !wish.message) return fail(form, err, "Please fill in your name and wish.");
+      if (!wish.name || !wish.message) return fail(form, err, "Bạn điền tên và lời chúc giúp mình nhé.");
 
       const btn = form.querySelector('button[type="submit"]');
       btn.disabled = true;
-      btn.textContent = "Pinning...";
+      btn.textContent = "Đang gửi...";
       try {
         await send(wish);
         wall.prepend(noteEl(wish, count++));
         empty.hidden = true;
         form.elements.message.value = "";
-        toast("Your wish is on the wall. Thank you!");
+        toast(DEMO
+          ? "Chế độ demo: chưa kết nối Google Sheet nên lời chúc chưa được lưu."
+          : "Lời chúc của bạn đã được ghim lên tường. Cảm ơn bạn!");
         celebrate(false);
+        if (buddy) buddy.react("Cảm ơn lời chúc của bạn nhiều lắm!", true);
       } catch (ex) {
         console.error(ex);
-        fail(form, err, "Oops, something went wrong. Please try again.");
+        fail(form, err, "Ối, có lỗi rồi. Bạn thử lại giúp mình nhé.");
       } finally {
         btn.disabled = false;
-        btn.textContent = "Pin my wish";
+        btn.textContent = "Gửi lời chúc";
       }
     });
   }
 
   // ---------- Music ----------
   function setupMusic() {
-    if (!C.musicUrl) return;
+    let player = null;
+    if (C.musicUrl) {
+      const audio = $("music");
+      audio.src = C.musicUrl;
+      player = { play: () => audio.play(), pause: () => audio.pause() };
+    } else if (C.builtInMusic !== false && window.createMusicBox) {
+      player = window.createMusicBox();
+    }
+    if (!player) return null;
+
     const btn = $("musicBtn");
-    const audio = $("music");
-    audio.src = C.musicUrl;
     btn.hidden = false;
-    btn.addEventListener("click", () => {
-      if (audio.paused) {
-        audio.play().then(() => {
-          btn.classList.add("playing");
-          btn.setAttribute("aria-label", "Pause music");
-        }).catch(() => toast("Couldn't play the music"));
-      } else {
-        audio.pause();
-        btn.classList.remove("playing");
-        btn.setAttribute("aria-label", "Play music");
-      }
+    let on = false;
+    const setOn = (v) => {
+      on = v;
+      btn.classList.toggle("playing", v);
+      btn.setAttribute("aria-label", v ? "Tắt nhạc" : "Bật nhạc");
+    };
+    const toggle = () => {
+      if (on) { player.pause(); setOn(false); return; }
+      Promise.resolve(player.play()).then(() => setOn(true)).catch(() => toast("Không phát được nhạc"));
+    };
+    btn.addEventListener("click", toggle);
+    document.addEventListener("visibilitychange", () => {
+      if (!on) return;
+      if (document.hidden) player.pause();
+      else player.play();
     });
+    return { start: () => { if (!on) toggle(); } };
+  }
+
+  // ---------- Cursor sparkles ----------
+  function setupSparkles() {
+    if (reduceMotion) return;
+    const colors = ["#ffb5c8", "#c9b6ff", "#aeead0", "#ffd36e", "#9fd3ff", "#f48fb1"];
+    const shapes = ["s-star", "s-heart", "s-dot"];
+    let live = 0;
+    let last = 0;
+
+    function spawn(x, y, spread, shape) {
+      if (live > 60) return;
+      const s = document.createElement("span");
+      s.className = `sparkle ${shape || shapes[Math.floor(Math.random() * shapes.length)]}`;
+      s.style.left = `${x}px`;
+      s.style.top = `${y}px`;
+      s.style.background = colors[Math.floor(Math.random() * colors.length)];
+      const angle = Math.random() * Math.PI * 2;
+      const dist = spread * (0.4 + Math.random() * 0.6);
+      s.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
+      s.style.setProperty("--dy", `${Math.sin(angle) * dist + spread * 0.4}px`);
+      s.style.setProperty("--k", (0.6 + Math.random() * 0.8).toFixed(2));
+      s.style.setProperty("--t", `${0.7 + Math.random() * 0.5}s`);
+      live++;
+      s.addEventListener("animationend", () => { s.remove(); live--; });
+      document.body.appendChild(s);
+    }
+
+    if (window.matchMedia("(pointer: fine)").matches) {
+      window.addEventListener("pointermove", (e) => {
+        const now = performance.now();
+        if (now - last < 30) return;
+        last = now;
+        spawn(e.clientX, e.clientY, 26);
+      }, { passive: true });
+    }
+    window.addEventListener("pointerdown", (e) => {
+      for (let i = 0; i < 10; i++) spawn(e.clientX, e.clientY, 70, "s-heart");
+    }, { passive: true });
+  }
+
+  // ---------- Walking student ----------
+  function setupBuddy() {
+    const el = $("buddy");
+    const bubble = $("buddyBubble");
+    const eyes = $("buddyEyes");
+    let lastY = window.scrollY;
+    let walkTimer, bubbleTimer, jumpTimer, happyTimer;
+    let currentSection = "";
+    let atEnd = false;
+
+    function say(text, ms = 3800) {
+      bubble.textContent = text;
+      bubble.classList.add("show");
+      clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(() => bubble.classList.remove("show"), ms);
+    }
+
+    function jump() {
+      el.classList.remove("jump");
+      void el.offsetWidth;
+      el.classList.add("jump");
+      clearTimeout(jumpTimer);
+      jumpTimer = setTimeout(() => el.classList.remove("jump"), 650);
+    }
+
+    function react(text, happy) {
+      say(text);
+      if (!happy) return;
+      jump();
+      el.classList.add("happy");
+      clearTimeout(happyTimer);
+      happyTimer = setTimeout(() => el.classList.remove("happy"), 2500);
+    }
+
+    // Layout values are cached so scrolling never forces a reflow.
+    let maxScroll = 0;
+    let track = 0;
+    function measure() {
+      maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      // keep clear of the music button on the right
+      track = Math.max(0, window.innerWidth - el.offsetWidth - 12 - 84);
+    }
+
+    function position() {
+      const p = maxScroll > 0 ? Math.min(1, Math.max(0, window.scrollY / maxScroll)) : 0;
+      el.style.transform = `translate3d(${12 + p * track}px, 0, 0)`;
+      el.classList.toggle("bubble-right", p > 0.5);
+      const end = p > 0.985;
+      if (end !== atEnd) {
+        atEnd = end;
+        el.classList.toggle("cheer", end);
+        if (end) say(`Cảm ơn ${guestName || "bạn"} đã xem hết thiệp của mình!`);
+      }
+    }
+
+    let scrollQueued = false;
+    window.addEventListener("scroll", () => {
+      if (scrollQueued) return;
+      scrollQueued = true;
+      requestAnimationFrame(() => {
+        scrollQueued = false;
+        const dy = window.scrollY - lastY;
+        lastY = window.scrollY;
+        if (dy !== 0 && !reduceMotion) {
+          if (!el.classList.contains("walking")) el.classList.add("walking");
+          if (el.classList.contains("face-left") !== dy < 0) el.classList.toggle("face-left", dy < 0);
+          clearTimeout(walkTimer);
+          walkTimer = setTimeout(() => el.classList.remove("walking"), 200);
+        }
+        position();
+      });
+    }, { passive: true });
+    window.addEventListener("resize", () => { measure(); position(); });
+    if ("ResizeObserver" in window) new ResizeObserver(() => { measure(); position(); }).observe(document.body);
+
+    let pointer = null;
+    let eyesQueued = false;
+    window.addEventListener("pointermove", (e) => {
+      pointer = e;
+      if (eyesQueued) return;
+      eyesQueued = true;
+      requestAnimationFrame(() => {
+        eyesQueued = false;
+        const r = el.getBoundingClientRect();
+        const dx = pointer.clientX - (r.left + r.width / 2);
+        const dy = pointer.clientY - (r.top + r.height * 0.33);
+        const d = Math.hypot(dx, dy) || 1;
+        const flip = el.classList.contains("face-left") ? -1 : 1;
+        eyes.style.transform = `translate(${(dx / d) * 2.6 * flip}px, ${(dy / d) * 2.2}px)`;
+      });
+    }, { passive: true });
+
+    const lines = {
+      hero: () => `Chào ${guestName || "bạn"}! Kéo xuống xem thiệp nha`,
+      letter: () => ($("envelope").classList.contains("open") ? "Thư mình viết đó, đọc hết nha!" : "Bấm vào phong bì đi bạn ơi!"),
+      details: () => "Nhớ lưu lại ngày này nhé!",
+      rsvp: () => "Bạn xác nhận giúp mình nha!",
+      wishes: () => "Viết cho mình vài lời chúc đi!",
+    };
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        const key = e.target.id || "hero";
+        if (key === currentSection) return;
+        currentSection = key;
+        if (!document.body.classList.contains("gated")) say(lines[key]());
+      });
+    }, { rootMargin: "-45% 0px -45% 0px" });
+    [document.querySelector(".hero"), $("letter"), $("details"), $("rsvp"), $("wishes")].forEach((s) => io.observe(s));
+
+    const pokes = ["Hihi, nhột quá!", "Mình tốt nghiệp rồi nè!", "Yay! Cảm ơn bạn đã ghé!", "Nhớ đến dự lễ nha!"];
+    let pokeIndex = 0;
+    el.addEventListener("click", () => react(pokes[pokeIndex++ % pokes.length], true));
+
+    measure();
+    position();
+    return {
+      react,
+      greet(name) {
+        currentSection = "hero";
+        setTimeout(() => react(`Chào ${name}! Đi xem thiệp với mình nha!`, true), 700);
+      },
+    };
   }
 
   fillContent();
+  applyGuest("");
   splitTitle();
   makeStars();
   setupReveal();
@@ -378,6 +623,13 @@
   setupCountdown();
   setupRsvp();
   setupWishes();
-  setupMusic();
+  const music = setupMusic();
+  setupSparkles();
+  buddy = setupBuddy();
+  setupGate((name) => {
+    celebrate(false);
+    buddy.greet(name);
+    if (music) music.start();
+  });
   if (DEMO) console.info("Demo mode: set appsScriptUrl in js/config.js to save responses.");
 })();

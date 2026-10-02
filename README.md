@@ -18,7 +18,7 @@ Add `?to=Name` to the link and the letter greets them by name:
 https://your-site.com/?to=Minh%20Anh
 ```
 
-The RSVP sheet also records which link was used ("Invite link name" column).
+The RSVP sheet also records which link was used ("Tên trong link mời" column).
 
 ## 3. Connect Google Sheets (stores RSVPs and wishes)
 
@@ -33,7 +33,7 @@ The RSVP sheet also records which link was used ("Invite link name" column).
 The `RSVP` and `Wishes` tabs are created on the first submission.
 
 - **RSVP is private.** Only you can see it in the Sheet. The website has no way to read it back.
-- **Wishes are public** on the wall. To hide one, tick its **Hidden** checkbox in the Sheet.
+- **Wishes are public** on the wall. To hide one, tick its **Ẩn** (hidden) checkbox in the Sheet.
 
 If you change `Code.gs` later, use **Deploy > Manage deployments > Edit > New version** so the URL stays the same.
 
