@@ -6,8 +6,7 @@
   const $ = (id) => document.getElementById(id);
   const TBA = "Sắp công bố";
   const DEMO = !C.appsScriptUrl;
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let buddy = null;
+  const TZ = "Asia/Ho_Chi_Minh";
 
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
@@ -22,9 +21,35 @@
     else el.hidden = true;
   }
 
+  function setImg(id, src, src2x) {
+    const img = $(id);
+    if (!img || !src) return;
+    img.src = src;
+    if (src2x) img.srcset = `${src} 1x, ${src2x} 2x`;
+  }
+
   function getRecipient() {
     const to = new URLSearchParams(location.search).get("to");
     return to ? to.trim().slice(0, 40) : "";
+  }
+
+  function eventDate() {
+    const d = ev.dateTime ? new Date(ev.dateTime) : null;
+    return d && !isNaN(d) ? d : null;
+  }
+
+  function dateParts(d) {
+    const parts = {};
+    new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric" })
+      .formatToParts(d).forEach((p) => { parts[p.type] = p.value; });
+    parts.weekday = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "long" }).format(d);
+    return parts;
+  }
+
+  function mapHref() {
+    if (ev.mapUrl && /^https?:\/\//i.test(ev.mapUrl)) return ev.mapUrl;
+    if (ev.venueAddress) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.venueAddress)}`;
+    return "";
   }
 
   // ---------- Fill content ----------
@@ -33,35 +58,112 @@
     setText("major", C.major);
     setText("school", C.school);
     if (!C.major || !C.school) $("majorDot").hidden = true;
-    setText("classOf", C.classOf, "");
+    ["classOf", "stampYear", "envYear", "pcStampClass"].forEach((id) => setText(id, C.classOf, ""));
     setText("footerName", C.graduateName || "mình");
-    setText("stampYear", C.classOf, "");
     if (C.graduateName) document.title = `Lễ tốt nghiệp của ${C.graduateName}`;
 
-    if (C.photo) {
-      const img = $("heroPhoto");
-      img.src = C.photo;
-      img.alt = C.graduateName || "Ảnh tốt nghiệp";
-      img.hidden = false;
-      img.parentElement.classList.add("has-photo");
+    setImg("heroPhoto", C.heroPhoto, C.heroPhoto2x);
+    setImg("envPhoto", C.photo, C.photo2x);
+    const T = C.thankYou || {};
+    setImg("thanksPhoto", T.photo, T.photo2x);
+
+    const d = eventDate();
+    if (d) {
+      const p = dateParts(d);
+      const full = `${p.day}.${p.month}.${p.year}`;
+      $("mastDate").textContent = full;
+      $("sdWeekday").textContent = p.weekday;
+      $("sdDay").textContent = String(Number(p.day));
+      $("sdMonth").textContent = `${p.month} / ${p.year}`;
+      $("pcStampDate").textContent = full;
+    } else {
+      $("mastDate").textContent = `Coming soon · ${C.classOf || ""}`.trim();
+      $("sdWeekday").textContent = "Coming soon";
+      $("sdDay").textContent = "?";
+      $("sdMonth").textContent = C.classOf || "";
+      $("pcStampDate").textContent = C.classOf || "";
     }
+    setText("sdNote", C.saveTheDateNote);
 
     const L = C.letter || {};
     setText("signOff", L.signOff);
     setText("signature", C.graduateName);
+    setText("thanksSign", C.graduateName);
 
     setText("eventDate", ev.displayDate, TBA);
-    setText("eventTime", ev.displayTime);
+    setText("eventTime", ev.displayTime, TBA);
     setText("venueName", ev.venueName, TBA);
     setText("venueAddress", ev.venueAddress);
-    if (ev.mapUrl && /^https?:\/\//i.test(ev.mapUrl)) {
-      $("mapLink").href = ev.mapUrl;
-      $("mapLink").hidden = false;
-    }
     if (ev.dressCode) setText("dressCode", ev.dressCode);
     else $("dressCard").hidden = true;
+    if (ev.contact) setText("eventContact", ev.contact);
+    else $("contactRow").hidden = true;
+
+    const href = mapHref();
+    if (href) {
+      [$("mapLink"), $("locMapLink")].forEach((a) => { a.href = href; a.hidden = false; });
+    }
 
     if (C.rsvpDeadline) $("rsvpSub").textContent = `Bạn báo cho mình trước ngày ${C.rsvpDeadline} nhé`;
+
+    const loc = C.location || {};
+    setText("locNote", loc.note);
+    setText("locVenue", ev.venueName, TBA);
+    setText("locAddress", ev.venueAddress);
+    if (ev.contact) setText("locContact", ev.contact);
+    else $("locContactRow").hidden = true;
+    const dirBox = $("locDirections");
+    const dirs = Array.isArray(loc.directions) ? loc.directions : [];
+    if (!dirs.length) {
+      const p = document.createElement("p");
+      p.className = "tba";
+      p.textContent = TBA;
+      dirBox.appendChild(p);
+    }
+    dirs.forEach((dir) => {
+      if (dir.from) {
+        const h = document.createElement("p");
+        h.className = "ln-from";
+        h.textContent = dir.from;
+        dirBox.appendChild(h);
+      }
+      const ul = document.createElement("ul");
+      (dir.steps || []).forEach((s) => {
+        const li = document.createElement("li");
+        li.textContent = s;
+        ul.appendChild(li);
+      });
+      dirBox.appendChild(ul);
+    });
+
+    setText("musicTitle", C.musicTitle || "Nhạc nền");
+    setText("musicArtist", C.musicArtist, "");
+  }
+
+  // ---------- Collage ----------
+  const TILTS = [0, -4, 3, -2, 4, -3, 2, -5, 3, -2];
+  function renderCollage() {
+    const box = $("collage");
+    (C.gallery || []).forEach((item, i) => {
+      const [src, src2x] = Array.isArray(item) ? item : [item];
+      const fig = document.createElement("figure");
+      fig.className = `cl-item cl-${i} reveal${i === 0 ? " cl-big" : ""}`;
+      fig.style.setProperty("--tilt", `${TILTS[i % TILTS.length]}deg`);
+      const img = document.createElement("img");
+      img.src = src;
+      if (src2x) img.srcset = `${src} 1x, ${src2x} 2x`;
+      img.alt = "";
+      img.loading = "lazy";
+      img.decoding = "async";
+      fig.appendChild(img);
+      if (i > 0) {
+        const tape = document.createElement("span");
+        tape.className = "tape";
+        tape.setAttribute("aria-hidden", "true");
+        fig.appendChild(tape);
+      }
+      box.appendChild(fig);
+    });
   }
 
   // ---------- Personal letter ----------
@@ -75,10 +177,16 @@
     return match ? notes[match] : "";
   }
 
-  let guestName = "";
+  function fillParagraphs(box, list, shown) {
+    box.textContent = "";
+    (list || []).forEach((text) => {
+      const p = document.createElement("p");
+      p.textContent = text.split("{name}").join(shown);
+      box.appendChild(p);
+    });
+  }
 
   function applyGuest(name) {
-    guestName = name;
     const L = C.letter || {};
     const shown = name || L.defaultRecipient || "bạn";
     $("recipient").textContent = shown;
@@ -86,12 +194,7 @@
     $("heroHello").textContent = name ? `Xin chào, ${name}!` : "";
 
     const body = $("letterBody");
-    body.textContent = "";
-    (L.paragraphs || []).forEach((text) => {
-      const p = document.createElement("p");
-      p.textContent = text.split("{name}").join(shown);
-      body.appendChild(p);
-    });
+    fillParagraphs(body, L.paragraphs, shown);
     const ps = name && findPersonalNote(name);
     if (ps) {
       const p = document.createElement("p");
@@ -99,6 +202,7 @@
       p.textContent = `P.S. ${ps}`;
       body.appendChild(p);
     }
+    fillParagraphs($("thanksBody"), (C.thankYou || {}).paragraphs, name || "bạn");
 
     if (name) {
       $("rsvpName").value = name;
@@ -112,9 +216,10 @@
     const form = $("gateForm");
     const input = $("gateName");
     const err = $("gateError");
+    let current = "";
 
     const open = () => {
-      input.value = guestName || store.get("guestName") || getRecipient();
+      input.value = current || store.get("guestName") || getRecipient();
       gate.classList.remove("leaving");
       gate.hidden = false;
       document.body.classList.add("gated");
@@ -133,11 +238,12 @@
         return;
       }
       err.textContent = "";
+      current = name;
       store.set("guestName", name);
       applyGuest(name);
       gate.classList.add("leaving");
       document.body.classList.remove("gated");
-      setTimeout(() => { gate.hidden = true; }, 800);
+      setTimeout(() => { gate.hidden = true; }, 700);
       onEnter(name);
     });
 
@@ -147,36 +253,6 @@
     open();
   }
 
-  // ---------- Hero title letter animation ----------
-  function splitTitle() {
-    const el = $("heroTitle");
-    const text = el.textContent;
-    el.textContent = "";
-    [...text].forEach((ch, i) => {
-      const span = document.createElement("span");
-      span.className = "ch";
-      span.setAttribute("aria-hidden", "true");
-      span.textContent = ch === " " ? " " : ch;
-      span.style.animationDelay = `${0.3 + i * 0.05}s`;
-      el.appendChild(span);
-    });
-  }
-
-  function makeStars() {
-    const box = document.querySelector(".stars");
-    const count = window.innerWidth < 600 ? 10 : 20;
-    for (let i = 0; i < count; i++) {
-      const s = document.createElement("span");
-      s.className = "star";
-      s.style.left = `${Math.random() * 100}%`;
-      s.style.top = `${Math.random() * 100}%`;
-      s.style.animationDelay = `${Math.random() * 3}s`;
-      const size = 6 + Math.random() * 10;
-      s.style.width = s.style.height = `${size}px`;
-      box.appendChild(s);
-    }
-  }
-
   // ---------- Reveal on scroll ----------
   function setupReveal() {
     const items = document.querySelectorAll(".reveal");
@@ -184,49 +260,35 @@
       items.forEach((el) => el.classList.add("in"));
       return;
     }
-    // Pause the hero's looping animations once it's scrolled out of view.
-    const hero = document.querySelector(".hero");
-    new IntersectionObserver(([e]) => hero.classList.toggle("offscreen", !e.isIntersecting)).observe(hero);
-
     const io = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
         if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
       });
-    }, { threshold: 0.15 });
+    }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
     items.forEach((el) => io.observe(el));
-  }
-
-  // ---------- Confetti ----------
-  function celebrate(big) {
-    if (typeof window.confetti !== "function") return;
-    const colors = ["#ffb5c8", "#c9b6ff", "#aeead0", "#ffe9a3", "#c4e4ff", "#f48fb1"];
-    window.confetti({ particleCount: big ? 160 : 90, spread: 90, origin: { y: 0.65 }, colors });
-    if (big) {
-      setTimeout(() => window.confetti({ particleCount: 60, angle: 60, spread: 60, origin: { x: 0 }, colors }), 250);
-      setTimeout(() => window.confetti({ particleCount: 60, angle: 120, spread: 60, origin: { x: 1 }, colors }), 400);
-    }
   }
 
   // ---------- Envelope ----------
   function setupEnvelope() {
     const env = $("envelope");
-    const stage = env.parentElement;
+    const card = $("letterCard");
     env.addEventListener("click", () => {
-      if (env.classList.contains("open")) return;
+      const wasOpen = env.classList.contains("open");
       env.classList.add("open");
-      setTimeout(() => env.classList.add("gone"), 1100);
       setTimeout(() => {
-        stage.classList.add("letter-stage-open");
-        celebrate(false);
-      }, 1500);
+        $("invitation").scrollIntoView({ behavior: "smooth", block: "start" });
+        card.classList.remove("pop");
+        void card.offsetWidth;
+        card.classList.add("pop");
+      }, wasOpen ? 0 : 900);
     });
   }
 
   // ---------- Countdown ----------
   function setupCountdown() {
-    const target = ev.dateTime ? new Date(ev.dateTime) : null;
+    const target = eventDate();
     const msg = $("cdMessage");
-    if (!target || isNaN(target)) {
+    if (!target) {
       msg.textContent = "Ngày tổ chức vẫn còn là bí mật — bạn quay lại sau nhé!";
       return;
     }
@@ -337,8 +399,6 @@
         if (DEMO) toast("Chế độ demo: chưa kết nối Google Sheet nên câu trả lời chưa được lưu.");
         else store.set("rsvp", answer);
         showThanks(answer);
-        celebrate(answer.attending === "yes");
-        if (buddy) buddy.react(answer.attending === "yes" ? "Yay! Hẹn gặp bạn nha!" : "Huhu, tiếc ghê...", answer.attending === "yes");
       } catch (ex) {
         console.error(ex);
         fail(form, err, "Ối, có lỗi rồi. Bạn thử lại giúp mình nhé.");
@@ -352,7 +412,7 @@
   // ---------- Wishes ----------
   function noteEl(w, i) {
     const n = document.createElement("div");
-    n.className = `note n${i % 5}`;
+    n.className = `note n${i % 4}`;
     n.style.setProperty("--tilt", `${((i * 37) % 7) - 3}deg`);
     n.style.setProperty("--tape", `${((i * 53) % 9) - 4}deg`);
     n.style.animationDelay = `${Math.min(i, 12) * 0.06}s`;
@@ -405,8 +465,6 @@
         toast(DEMO
           ? "Chế độ demo: chưa kết nối Google Sheet nên lời chúc chưa được lưu."
           : "Lời chúc của bạn đã được ghim lên tường. Cảm ơn bạn!");
-        celebrate(false);
-        if (buddy) buddy.react("Cảm ơn lời chúc của bạn nhiều lắm!", true);
       } catch (ex) {
         console.error(ex);
         fail(form, err, "Ối, có lỗi rồi. Bạn thử lại giúp mình nhé.");
@@ -424,24 +482,33 @@
       const audio = $("music");
       audio.src = C.musicUrl;
       player = { play: () => audio.play(), pause: () => audio.pause() };
+    } else if (C.youtubeMusicId && window.createYouTubeMusic) {
+      player = window.createYouTubeMusic(C.youtubeMusicId);
     } else if (C.builtInMusic !== false && window.createMusicBox) {
       player = window.createMusicBox();
     }
     if (!player) return null;
 
-    const btn = $("musicBtn");
-    btn.hidden = false;
+    const btns = [$("musicBtn"), $("musicCardBtn")];
+    const card = $("musicCard");
+    $("musicBtn").hidden = false;
+    card.hidden = false;
+    $("musicHint").hidden = false;
+
     let on = false;
     const setOn = (v) => {
       on = v;
-      btn.classList.toggle("playing", v);
-      btn.setAttribute("aria-label", v ? "Tắt nhạc" : "Bật nhạc");
+      card.classList.toggle("playing", v);
+      btns.forEach((b) => {
+        b.classList.toggle("playing", v);
+        b.setAttribute("aria-label", v ? "Tắt nhạc" : "Bật nhạc");
+      });
     };
     const toggle = () => {
       if (on) { player.pause(); setOn(false); return; }
       Promise.resolve(player.play()).then(() => setOn(true)).catch(() => toast("Không phát được nhạc"));
     };
-    btn.addEventListener("click", toggle);
+    btns.forEach((b) => b.addEventListener("click", toggle));
     document.addEventListener("visibilitychange", () => {
       if (!on) return;
       if (document.hidden) player.pause();
@@ -450,185 +517,16 @@
     return { start: () => { if (!on) toggle(); } };
   }
 
-  // ---------- Cursor sparkles ----------
-  function setupSparkles() {
-    if (reduceMotion) return;
-    const colors = ["#ffb5c8", "#c9b6ff", "#aeead0", "#ffd36e", "#9fd3ff", "#f48fb1"];
-    const shapes = ["s-star", "s-heart", "s-dot"];
-    let live = 0;
-    let last = 0;
-
-    function spawn(x, y, spread, shape) {
-      if (live > 60) return;
-      const s = document.createElement("span");
-      s.className = `sparkle ${shape || shapes[Math.floor(Math.random() * shapes.length)]}`;
-      s.style.left = `${x}px`;
-      s.style.top = `${y}px`;
-      s.style.background = colors[Math.floor(Math.random() * colors.length)];
-      const angle = Math.random() * Math.PI * 2;
-      const dist = spread * (0.4 + Math.random() * 0.6);
-      s.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
-      s.style.setProperty("--dy", `${Math.sin(angle) * dist + spread * 0.4}px`);
-      s.style.setProperty("--k", (0.6 + Math.random() * 0.8).toFixed(2));
-      s.style.setProperty("--t", `${0.7 + Math.random() * 0.5}s`);
-      live++;
-      s.addEventListener("animationend", () => { s.remove(); live--; });
-      document.body.appendChild(s);
-    }
-
-    if (window.matchMedia("(pointer: fine)").matches) {
-      window.addEventListener("pointermove", (e) => {
-        const now = performance.now();
-        if (now - last < 30) return;
-        last = now;
-        spawn(e.clientX, e.clientY, 26);
-      }, { passive: true });
-    }
-    window.addEventListener("pointerdown", (e) => {
-      for (let i = 0; i < 10; i++) spawn(e.clientX, e.clientY, 70, "s-heart");
-    }, { passive: true });
-  }
-
-  // ---------- Walking student ----------
-  function setupBuddy() {
-    const el = $("buddy");
-    const bubble = $("buddyBubble");
-    const eyes = $("buddyEyes");
-    let lastY = window.scrollY;
-    let walkTimer, bubbleTimer, jumpTimer, happyTimer;
-    let currentSection = "";
-    let atEnd = false;
-
-    function say(text, ms = 3800) {
-      bubble.textContent = text;
-      bubble.classList.add("show");
-      clearTimeout(bubbleTimer);
-      bubbleTimer = setTimeout(() => bubble.classList.remove("show"), ms);
-    }
-
-    function jump() {
-      el.classList.remove("jump");
-      void el.offsetWidth;
-      el.classList.add("jump");
-      clearTimeout(jumpTimer);
-      jumpTimer = setTimeout(() => el.classList.remove("jump"), 650);
-    }
-
-    function react(text, happy) {
-      say(text);
-      if (!happy) return;
-      jump();
-      el.classList.add("happy");
-      clearTimeout(happyTimer);
-      happyTimer = setTimeout(() => el.classList.remove("happy"), 2500);
-    }
-
-    // Layout values are cached so scrolling never forces a reflow.
-    let maxScroll = 0;
-    let track = 0;
-    function measure() {
-      maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      // keep clear of the music button on the right
-      track = Math.max(0, window.innerWidth - el.offsetWidth - 12 - 84);
-    }
-
-    function position() {
-      const p = maxScroll > 0 ? Math.min(1, Math.max(0, window.scrollY / maxScroll)) : 0;
-      el.style.transform = `translate3d(${12 + p * track}px, 0, 0)`;
-      el.classList.toggle("bubble-right", p > 0.5);
-      const end = p > 0.985;
-      if (end !== atEnd) {
-        atEnd = end;
-        el.classList.toggle("cheer", end);
-        if (end) say(`Cảm ơn ${guestName || "bạn"} đã xem hết thiệp của mình!`);
-      }
-    }
-
-    let scrollQueued = false;
-    window.addEventListener("scroll", () => {
-      if (scrollQueued) return;
-      scrollQueued = true;
-      requestAnimationFrame(() => {
-        scrollQueued = false;
-        const dy = window.scrollY - lastY;
-        lastY = window.scrollY;
-        if (dy !== 0 && !reduceMotion) {
-          if (!el.classList.contains("walking")) el.classList.add("walking");
-          if (el.classList.contains("face-left") !== dy < 0) el.classList.toggle("face-left", dy < 0);
-          clearTimeout(walkTimer);
-          walkTimer = setTimeout(() => el.classList.remove("walking"), 200);
-        }
-        position();
-      });
-    }, { passive: true });
-    window.addEventListener("resize", () => { measure(); position(); });
-    if ("ResizeObserver" in window) new ResizeObserver(() => { measure(); position(); }).observe(document.body);
-
-    let pointer = null;
-    let eyesQueued = false;
-    window.addEventListener("pointermove", (e) => {
-      pointer = e;
-      if (eyesQueued) return;
-      eyesQueued = true;
-      requestAnimationFrame(() => {
-        eyesQueued = false;
-        const r = el.getBoundingClientRect();
-        const dx = pointer.clientX - (r.left + r.width / 2);
-        const dy = pointer.clientY - (r.top + r.height * 0.33);
-        const d = Math.hypot(dx, dy) || 1;
-        const flip = el.classList.contains("face-left") ? -1 : 1;
-        eyes.style.transform = `translate(${(dx / d) * 2.6 * flip}px, ${(dy / d) * 2.2}px)`;
-      });
-    }, { passive: true });
-
-    const lines = {
-      hero: () => `Chào ${guestName || "bạn"}! Kéo xuống xem thiệp nha`,
-      letter: () => ($("envelope").classList.contains("open") ? "Thư mình viết đó, đọc hết nha!" : "Bấm vào phong bì đi bạn ơi!"),
-      details: () => "Nhớ lưu lại ngày này nhé!",
-      rsvp: () => "Bạn xác nhận giúp mình nha!",
-      wishes: () => "Viết cho mình vài lời chúc đi!",
-    };
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (!e.isIntersecting) return;
-        const key = e.target.id || "hero";
-        if (key === currentSection) return;
-        currentSection = key;
-        if (!document.body.classList.contains("gated")) say(lines[key]());
-      });
-    }, { rootMargin: "-45% 0px -45% 0px" });
-    [document.querySelector(".hero"), $("letter"), $("details"), $("rsvp"), $("wishes")].forEach((s) => io.observe(s));
-
-    const pokes = ["Hihi, nhột quá!", "Mình tốt nghiệp rồi nè!", "Yay! Cảm ơn bạn đã ghé!", "Nhớ đến dự lễ nha!"];
-    let pokeIndex = 0;
-    el.addEventListener("click", () => react(pokes[pokeIndex++ % pokes.length], true));
-
-    measure();
-    position();
-    return {
-      react,
-      greet(name) {
-        currentSection = "hero";
-        setTimeout(() => react(`Chào ${name}! Đi xem thiệp với mình nha!`, true), 700);
-      },
-    };
-  }
-
   fillContent();
+  renderCollage();
   applyGuest("");
-  splitTitle();
-  makeStars();
   setupReveal();
   setupEnvelope();
   setupCountdown();
   setupRsvp();
   setupWishes();
   const music = setupMusic();
-  setupSparkles();
-  buddy = setupBuddy();
-  setupGate((name) => {
-    celebrate(false);
-    buddy.greet(name);
+  setupGate(() => {
     if (music) music.start();
   });
   if (DEMO) console.info("Demo mode: set appsScriptUrl in js/config.js to save responses.");
