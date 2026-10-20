@@ -268,18 +268,75 @@
     items.forEach((el) => io.observe(el));
   }
 
-  // ---------- Envelope ----------
-  function setupEnvelope() {
+  // ---------- Crayon kid ----------
+  function setupKid() {
+    const el = $("kid");
+    const bubble = $("kidBubble");
     const env = $("envelope");
-    const card = $("letterCard");
+    let bubbleTimer, moodTimer;
+    let pinned = false;
+
+    function say(text, ms = 3800) {
+      bubble.textContent = text;
+      bubble.classList.add("show");
+      clearTimeout(bubbleTimer);
+      pinned = !ms;
+      if (ms) bubbleTimer = setTimeout(() => bubble.classList.remove("show"), ms);
+    }
+
+    function hush() {
+      pinned = false;
+      clearTimeout(bubbleTimer);
+      bubble.classList.remove("show");
+    }
+
+    function react(text, mood) {
+      el.classList.remove("point", "cheer", "happy");
+      say(text, 4500);
+      if (!mood) return;
+      void el.offsetWidth;
+      el.classList.add("happy");
+      if (mood === "cheer") el.classList.add("cheer");
+      clearTimeout(moodTimer);
+      moodTimer = setTimeout(() => el.classList.remove("cheer", "happy"), 2600);
+    }
+
+    function point(on) {
+      el.classList.toggle("point", on);
+      if (on) say("Bấm vào phong bì để mở thư nha!", 0);
+      else if (pinned) hush();
+    }
+
+    const pokes = ["Hihi, nhột quá!", "Nhớ đến dự lễ của mình nha!", "Kéo xuống xem tiếp đi bạn ơi!", "Mình tốt nghiệp rồi nè!"];
+    let pokeIndex = 0;
+    el.addEventListener("click", () => react(pokes[pokeIndex++ % pokes.length], "cheer"));
+
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(([e]) => {
+        if (document.body.classList.contains("gated")) return;
+        point(e.isIntersecting && !env.classList.contains("open"));
+      }, { rootMargin: "-35% 0px -35% 0px" }).observe($("letter"));
+    }
+
+    return { say, react, point };
+  }
+
+  // ---------- Envelope ----------
+  function setupEnvelope(kid) {
+    const env = $("envelope");
+    const section = $("invitation");
     env.addEventListener("click", () => {
       const wasOpen = env.classList.contains("open");
       env.classList.add("open");
+      kid.point(false);
       setTimeout(() => {
-        $("invitation").scrollIntoView({ behavior: "smooth", block: "start" });
-        card.classList.remove("pop");
-        void card.offsetWidth;
-        card.classList.add("pop");
+        if (section.hidden) {
+          section.hidden = false;
+          section.querySelectorAll(".reveal").forEach((r) => r.classList.add("in"));
+          section.classList.add("unfold");
+          kid.react("Thư của bạn đây, đọc hết nha!", "happy");
+        }
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
       }, wasOpen ? 0 : 900);
     });
   }
@@ -353,7 +410,7 @@
   }
 
   // ---------- RSVP ----------
-  function setupRsvp() {
+  function setupRsvp(kid) {
     const form = $("rsvpForm");
     const thanks = $("rsvpThanks");
     const err = $("rsvpError");
@@ -399,6 +456,8 @@
         if (DEMO) toast("Chế độ demo: chưa kết nối Google Sheet nên câu trả lời chưa được lưu.");
         else store.set("rsvp", answer);
         showThanks(answer);
+        if (answer.attending === "yes") kid.react(`Yay! Cảm ơn ${answer.name} nha, hẹn gặp bạn ở buổi lễ!`, "cheer");
+        else kid.react("Tiếc ghê... cảm ơn bạn đã báo cho mình nha!");
       } catch (ex) {
         console.error(ex);
         fail(form, err, "Ối, có lỗi rồi. Bạn thử lại giúp mình nhé.");
@@ -425,7 +484,7 @@
     return n;
   }
 
-  function setupWishes() {
+  function setupWishes(kid) {
     const wall = $("wall");
     const empty = $("wallEmpty");
     const form = $("wishForm");
@@ -460,6 +519,7 @@
       try {
         await send(wish);
         wall.prepend(noteEl(wish, count++));
+        kid.react("Cảm ơn lời chúc của bạn nhiều lắm!", "happy");
         empty.hidden = true;
         form.elements.message.value = "";
         toast(DEMO
@@ -495,9 +555,30 @@
     card.hidden = false;
     $("musicHint").hidden = false;
 
+    const pointer = $("musicPointer");
+    const mBtn = $("musicBtn");
+    let hinted = false;
+    let hintTimer;
+    const hideHint = () => {
+      clearTimeout(hintTimer);
+      pointer.classList.remove("show");
+      mBtn.classList.remove("attn");
+    };
+    const showHint = () => {
+      if (hinted) return;
+      hinted = true;
+      pointer.hidden = false;
+      void pointer.offsetWidth;
+      pointer.classList.add("show");
+      mBtn.classList.add("attn");
+      hintTimer = setTimeout(hideHint, 9000);
+    };
+
     let on = false;
     const setOn = (v) => {
       on = v;
+      if (v) setTimeout(() => { if (on) showHint(); }, 4500);
+      else hideHint();
       card.classList.toggle("playing", v);
       btns.forEach((b) => {
         b.classList.toggle("playing", v);
@@ -521,13 +602,15 @@
   renderCollage();
   applyGuest("");
   setupReveal();
-  setupEnvelope();
+  const kid = setupKid();
+  setupEnvelope(kid);
   setupCountdown();
-  setupRsvp();
-  setupWishes();
+  setupRsvp(kid);
+  setupWishes(kid);
   const music = setupMusic();
-  setupGate(() => {
+  setupGate((name) => {
     if (music) music.start();
+    setTimeout(() => kid.react(`Chào ${name}! Kéo xuống xem thiệp với mình nha!`, "happy"), 700);
   });
   if (DEMO) console.info("Demo mode: set appsScriptUrl in js/config.js to save responses.");
 })();

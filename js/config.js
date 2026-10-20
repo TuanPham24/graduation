@@ -23,7 +23,7 @@ window.GRAD_CONFIG = {
     venueAddress: "Số 2 Võ Oanh, P.Thạnh Mỹ Tây, TP.HCM", // VD: "268 Lý Thường Kiệt, Q.10, TP.HCM"
     mapUrl: "https://maps.app.goo.gl/N8LtzbQPNZ8UBdS66", // link Google Maps
     dressCode: "", // VD: "Trang phục lịch sự" — để trống sẽ ẩn dòng này
-    contact: "0901 234 567 (Tuấn)", // VD: "0901 234 567 (Tuấn)" — để trống sẽ ẩn
+    contact: "0961 634 579 (Tuấn)", // VD: "0961 634 579 (Tuấn)" — để trống sẽ ẩn
   },
 
   // Ghi chú viết tay trên tờ lịch "Save the date".

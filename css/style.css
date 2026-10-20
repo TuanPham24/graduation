@@ -321,7 +321,9 @@ img { max-width: 100%; }
 }
 .pc-grad { position: relative; text-align: center; margin-top: clamp(28px, 6vw, 60px); }
 .pc-cap { position: absolute; left: -6%; top: -38px; color: var(--ink); transform: rotate(-14deg); }
-.pc-script { font-family: var(--font-script); font-size: clamp(3rem, 6.4vw, 4.8rem); line-height: 1; margin: 0; }
+.pc-script { font-family: var(--font-script); font-size: clamp(3rem, 6.4vw, 4.8rem); line-height: 1.1; margin: 0; color: var(--navy); transform: rotate(-5deg); }
+.pc-swash { display: block; width: 72%; height: auto; margin: -6px auto 0; transform: rotate(-5deg); }
+.pc-swash path { fill: none; stroke: var(--navy); stroke-width: 2; stroke-linecap: round; }
 .pc-year { font-family: var(--font-hand); font-size: 1.4rem; letter-spacing: .24em; margin: -4px 0 0 46%; }
 .pc-doodle { position: absolute; color: var(--ink); animation: twirl 7s ease-in-out infinite; }
 .pc-doodle.d1 { left: 8%; top: 22%; }
@@ -514,6 +516,57 @@ textarea:focus { box-shadow: 0 0 0 3px rgba(43, 63, 122, .15); }
 }
 .toast.show { transform: translate(-50%, 0); }
 
+/* ---------- Letter unfold ---------- */
+#invitation.unfold .postcard { animation: unfold 1.1s var(--ease) both; }
+#invitation.unfold .kicker { animation: fadeUp .8s var(--ease) both; }
+
+/* ---------- Music pointer ---------- */
+.music-hint {
+  position: fixed; right: 22px; bottom: 76px; z-index: 29; width: 190px; pointer-events: none;
+  display: flex; flex-direction: column; align-items: flex-start;
+  opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s var(--ease);
+}
+.music-hint.show { opacity: 1; transform: none; }
+.music-hint p {
+  margin: 0 0 -6px; padding: 6px 12px; background: var(--card); border: 2px solid var(--ink); border-radius: 14px;
+  box-shadow: 3px 3px 0 var(--sky); font-family: var(--font-hand); font-size: 1.15rem; line-height: 1.2; rotate: -3deg;
+}
+.mh-arrows { align-self: flex-end; overflow: visible; }
+.mh-arrows path { fill: none; stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 6; stroke-linecap: round; animation: march 1s linear infinite; }
+.mh-arrows path:nth-of-type(2) { animation-delay: -.33s; }
+.mh-arrows path:nth-of-type(3) { animation-delay: -.66s; }
+.music-btn.attn { animation: ping 1.4s ease-out infinite; }
+
+/* ---------- Crayon kid ---------- */
+.kid {
+  position: fixed; left: 10px; bottom: 4px; z-index: 28; width: 110px; cursor: pointer;
+  transition: opacity .4s ease, transform .5s var(--ease); -webkit-tap-highlight-color: transparent;
+}
+body.gated .kid { opacity: 0; transform: translateY(60px); pointer-events: none; }
+.kid-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.kid-jump { animation: kidIdle 3s ease-in-out infinite; }
+.kid-arm { transition: transform .45s var(--ease); }
+.kid-arm-l { transform-origin: 40px 96px; }
+.kid-arm-r { transform-origin: 80px 96px; }
+.kid-blink { transform-origin: 60px 61px; animation: blink 4.5s infinite; }
+.kid-tassel { transform-origin: 60px 26px; animation: tassel 2.4s ease-in-out infinite; }
+.kid-mouth-open { display: none; }
+.kid.happy .kid-mouth { display: none; }
+.kid.happy .kid-mouth-open { display: block; }
+.kid.point .kid-arm-r { transform: rotate(-100deg); }
+.kid.point .kid-jump { animation: kidBob .8s ease-in-out infinite; }
+.kid.cheer .kid-arm-r { transform: rotate(-155deg); }
+.kid.cheer .kid-arm-l { transform: rotate(155deg); }
+.kid.cheer .kid-jump { animation: kidHop .55s ease-in-out 4; }
+.kid-bubble {
+  position: absolute; bottom: calc(100% - 8px); left: 64px; width: max-content; max-width: 230px;
+  padding: 8px 13px; background: #fff; border: 2px solid var(--ink); border-radius: 16px 16px 16px 4px;
+  box-shadow: 3px 3px 0 var(--sky); font-family: var(--font-hand); font-size: 1.15rem; line-height: 1.25; color: var(--ink);
+  opacity: 0; transform: translateY(8px) scale(.85); transform-origin: bottom left; pointer-events: none;
+  transition: opacity .25s ease, transform .35s var(--ease);
+}
+.kid-bubble.show { opacity: 1; transform: none; }
+
 /* ---------- Name gate ---------- */
 body.gated { overflow: hidden; }
 body.gated .hero *, body.gated .hero { animation-play-state: paused !important; }
@@ -558,6 +611,13 @@ body.gated .hero *, body.gated .hero { animation-play-state: paused !important; 
 @keyframes pinBounce { 0%, 100% { translate: 0 0; } 40% { translate: 0 -10px; } 60% { translate: 0 0; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes gateFade { to { opacity: 0; } }
+@keyframes unfold { from { opacity: 0; transform: translateY(70px) rotate(-3deg) scale(.9); } 60% { opacity: 1; transform: translateY(-6px) rotate(.5deg) scale(1.01); } to { opacity: 1; transform: none; } }
+@keyframes ping { 0% { box-shadow: 3px 3px 0 var(--sky), 0 0 0 0 rgba(43, 63, 122, .45); } 100% { box-shadow: 3px 3px 0 var(--sky), 0 0 0 18px rgba(43, 63, 122, 0); } }
+@keyframes kidIdle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes kidBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes kidHop { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-24px); } }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes tassel { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(8deg); } }
 @keyframes gateCardOut { to { transform: translateY(-40px) scale(.94); opacity: 0; } }
 
 /* ---------- Responsive ---------- */
@@ -586,6 +646,13 @@ body.gated .hero *, body.gated .hero { animation-play-state: paused !important; 
   .cal-body { width: 50%; top: 31%; }
   .cal-month { top: 34%; }
   .cal-datelabel { top: 74%; }
+}
+@media (max-width: 600px) {
+  .kid { width: 76px; }
+  .kid-bubble { left: 44px; max-width: 190px; font-size: 1rem; }
+  .music-hint { width: 160px; right: 18px; }
+  .music-hint p { font-size: 1rem; }
+  .mh-arrows { width: 120px; height: 88px; }
 }
 @media (max-width: 480px) {
   .mast-row .edition { display: none; }
