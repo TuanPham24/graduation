@@ -51,13 +51,13 @@ window.GRAD_CONFIG = {
 
   // Ảnh cho phần "Chapters of Us". Ảnh đầu tiên là ảnh lớn ở giữa.
   gallery: [
-    ["assets/gallery/pic6.jpg", "assets/gallery/pic6@2x.jpg"],
     ["assets/gallery/pic3.jpg", "assets/gallery/pic3@2x.jpg"],
-    ["assets/gallery/pic7.jpg", "assets/gallery/pic7@2x.jpg"],
+    ["assets/gallery/pic12.jpg", "assets/gallery/pic12@2x.jpg"],
+    ["assets/gallery/pic13.jpg", "assets/gallery/pic13@2x.jpg"],
     ["assets/gallery/pic4.jpg", "assets/gallery/pic4@2x.jpg"],
-    ["assets/gallery/pic8.jpg", "assets/gallery/pic8@2x.jpg"],
-    ["assets/gallery/pic5.jpg", "assets/gallery/pic5@2x.jpg"],
-    ["assets/gallery/pic9.jpg", "assets/gallery/pic9@2x.jpg"],
+    ["assets/newpic.jpg", "assets/newpic.jpg"],
+    ["assets/gallery/pic15.jpg", "assets/gallery/pic15@2x.jpg"],
+    ["assets/gallery/pic16.jpg", "assets/gallery/pic16@2x.jpg"],
   ],
 
   location: {
