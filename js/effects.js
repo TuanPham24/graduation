@@ -296,15 +296,32 @@
     const tr0 = toEl.getBoundingClientRect();
     if (tr0.top < 60 || tr0.bottom > window.innerHeight - 20) {
       toEl.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
-      await wait(650);
+      // Wait until the scroll has really settled (slower on phones), max ~1.5s.
+      let prev = null;
+      for (let i = 0; i < 30; i++) {
+        await wait(50);
+        const top = Math.round(toEl.getBoundingClientRect().top);
+        if (i > 4 && top === prev) break;
+        prev = top;
+      }
     }
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const phone = W <= 600;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
     const a = fromEl.getBoundingClientRect();
     const b = toEl.getBoundingClientRect();
-    const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2;
-    const x2 = b.left + b.width / 2, y2 = b.top + b.height / 2;
-    // Arc up and over, a little to the side.
-    const x1 = (x0 + x2) / 2 + (x2 >= x0 ? -120 : 120);
-    const y1 = Math.min(y0, y2) - 160;
+    // On phones the page has scrolled down to the wall, so the send button is often
+    // off-screen: keep every point of the flight inside the viewport.
+    const x0 = clamp(a.left + a.width / 2, 30, W - 30);
+    const y0 = clamp(a.top + a.height / 2, 40, H - 40);
+    const x2 = clamp(b.left + b.width / 2, 30, W - 30);
+    const y2 = clamp(b.top + b.height / 2, 40, H - 40);
+    // Arc up and over, a little to the side (a smaller arc on phones).
+    const side = phone ? 60 : 120;
+    const lift = phone ? 90 : 160;
+    const x1 = clamp((x0 + x2) / 2 + (x2 >= x0 ? -side : side), 30, W - 30);
+    const y1 = clamp(Math.min(y0, y2) - lift, 40, H - 40);
 
     const plane = document.createElement("div");
     plane.className = "fx-plane";

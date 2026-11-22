@@ -607,7 +607,9 @@
         const note = noteEl(wish, count++);
         note.classList.add("incoming");
         wall.prepend(note);
-        wall.scrollTo({ left: 0, behavior: "smooth" });
+        // Phones: jump the swipe row back to the start at once, so the plane aims at
+        // where the note really is rather than where it is mid-scroll.
+        wall.scrollTo({ left: 0, behavior: mobile.matches ? "auto" : "smooth" });
         queueCount();
         empty.hidden = true;
         // The wish is already saved; a failed animation must not show the error message.
