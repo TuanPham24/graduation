@@ -484,12 +484,35 @@
       thanks.hidden = false;
     }
 
-    const saved = store.get("rsvp");
-    if (saved) showThanks(saved);
-
-    $("rsvpEdit").addEventListener("click", () => {
+    function showForm() {
       thanks.hidden = true;
       form.hidden = false;
+    }
+
+    // Answers are remembered per guest name on this device, so a different guest
+    // using the same phone gets a fresh form instead of someone else's answer.
+    // Each answer carries a random id; re-sending it updates that guest's row in
+    // the sheet instead of adding a second one, and two people who happen to share
+    // a name (on different devices) get different ids, so they stay separate rows.
+    const norm = (n) => String(n || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("vi");
+    const newId = () =>
+      (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+    function allAnswers() {
+      const map = store.get("rsvps");
+      if (map && typeof map === "object") return map;
+      const legacy = store.get("rsvp"); // saved by the old version: one answer per device
+      return legacy && legacy.name ? { [norm(legacy.name)]: legacy } : {};
+    }
+    let guest = "";
+    function sync(name) {
+      guest = name || "";
+      const saved = allAnswers()[norm(guest)];
+      if (saved) showThanks(saved);
+      else showForm();
+    }
+
+    $("rsvpEdit").addEventListener("click", () => {
+      showForm();
       form.classList.add("in");
     });
 
@@ -505,6 +528,9 @@
         note: String(fd.get("note") || "").trim(),
         invitedAs: getRecipient(),
       };
+      const key = norm(guest || answer.name);
+      const prev = allAnswers()[key];
+      answer.id = (prev && prev.id) || newId();
       if (!answer.name) return fail(form, err, "Bạn cho mình biết tên nhé.");
 
       const btn = form.querySelector('button[type="submit"]');
@@ -513,7 +539,11 @@
       try {
         await send(answer);
         if (DEMO) toast("Chế độ demo: chưa kết nối Google Sheet nên câu trả lời chưa được lưu.");
-        else store.set("rsvp", answer);
+        else {
+          const map = allAnswers();
+          map[key] = answer;
+          store.set("rsvps", map);
+        }
         showThanks(answer);
         if (answer.attending === "yes") {
           kid.react(`Yay! Cảm ơn ${answer.name} nha, hẹn gặp bạn ở buổi lễ!`, "cheer");
@@ -528,6 +558,7 @@
         btn.textContent = "Gửi câu trả lời";
       }
     });
+    return { sync };
   }
 
   // ---------- Wishes ----------
@@ -703,10 +734,11 @@
   const kid = setupKid();
   setupEnvelope(kid);
   setupCountdown();
-  setupRsvp(kid);
+  const rsvp = setupRsvp(kid);
   setupWishes(kid);
   const music = setupMusic();
   setupGate((name) => {
+    rsvp.sync(name);
     if (music) music.start();
     setTimeout(() => kid.react(`Chào ${name}! Kéo xuống xem thiệp với mình nha!`, "happy"), 700);
   });
