@@ -389,7 +389,18 @@
                 <path d="M144 -4 l 12 8 M156 -4 l -12 8" class="m-x"/>
                 <text x="150" y="-10" class="m-label m-label-xs" text-anchor="middle">cổng lớn (không vào)</text>
                 <!-- route: small gate → walkway → middle of the yard -->
-                <path d="M15 14 L 15 -10 L 47 -14 L 47 -92 L 108 -120" class="m-route" pathLength="1"/>
+                <path d="M-46 9 L 15 9 L 15 -10 L 47 -14 L 47 -92 L 108 -120" class="m-route" pathLength="1"/>
+                <!-- little graduate who walks the route (positioned by js/effects.js) -->
+                <g class="m-walker" id="mapWalker" opacity="0" transform="translate(-46 9) rotate(-11)">
+                  <g class="m-walker-bob">
+                    <ellipse cx="0" cy="0" rx="5" ry="1.6" fill="rgba(29,34,48,.25)"/>
+                    <path d="M-2.6 0 v-3 M2.6 0 v-3" stroke="#1d2230" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M-5 -2.5 q0 -7 5 -7.5 q5 .5 5 7.5 z" fill="#3b5aa8" stroke="#1d2230" stroke-width="1"/>
+                    <circle cx="0" cy="-13" r="4.6" fill="#ffe2cc" stroke="#1d2230" stroke-width="1"/>
+                    <path d="M-7 -17 L 0 -20 L 7 -17 L 0 -14.4 Z" fill="#1d2230"/>
+                    <path d="M4 -16.6 v4" stroke="#e0ad45" stroke-width="1.2" stroke-linecap="round"/>
+                  </g>
+                </g>
               </g>
               <!-- Ministop on the corner -->
               <g class="m-shop">
@@ -406,7 +417,7 @@
               <g class="m-step"><circle cx="87" cy="146" r="9"/><text x="87" y="150">1</text></g>
               <g class="m-step"><circle cx="138" cy="214" r="9"/><text x="138" y="218">2</text></g>
               <g class="m-step"><circle cx="254" cy="80" r="9"/><text x="254" y="84">3</text></g>
-              <g class="m-pin" transform="translate(278 104)"><path d="M0 0c-10-14-16-22-16-30a16 16 0 0 1 32 0c0 8-6 16-16 30z"/><circle cx="0" cy="-30" r="6" fill="#fff"/></g>
+              <g class="m-pin" transform="translate(300 108)"><path d="M0 0c-10-14-16-22-16-30a16 16 0 0 1 32 0c0 8-6 16-16 30z"/><circle cx="0" cy="-30" r="6" fill="#fff"/></g>
               <!-- compass -->
               <g class="m-compass" transform="translate(398 26)"><path d="M0 12 L 0 -10 M -5 -4 L 0 -12 L 5 -4"/><text x="0" y="24" text-anchor="middle">N</text></g>
             </svg>
@@ -540,6 +551,7 @@
   <script defer src="js/config.js"></script>
   <script defer src="js/music.js"></script>
   <script defer src="js/youtube-music.js"></script>
+  <script defer src="js/effects.js"></script>
   <script defer src="js/main.js"></script>
 </body>
 </html>

@@ -383,6 +383,7 @@
     const section = $("invitation");
     env.addEventListener("click", () => {
       const wasOpen = env.classList.contains("open");
+      if (!wasOpen && window.FX) window.FX.crackSeal(env.querySelector(".env-seal"));
       env.classList.add("open");
       kid.point(false);
       if (!$("musicCard").hidden) $("musicHint").hidden = false;
@@ -513,7 +514,10 @@
         if (DEMO) toast("Chế độ demo: chưa kết nối Google Sheet nên câu trả lời chưa được lưu.");
         else store.set("rsvp", answer);
         showThanks(answer);
-        if (answer.attending === "yes") kid.react(`Yay! Cảm ơn ${answer.name} nha, hẹn gặp bạn ở buổi lễ!`, "cheer");
+        if (answer.attending === "yes") {
+          kid.react(`Yay! Cảm ơn ${answer.name} nha, hẹn gặp bạn ở buổi lễ!`, "cheer");
+          if (window.FX) window.FX.capToss();
+        }
         else kid.react("Tiếc ghê... cảm ơn bạn đã báo cho mình nha!");
       } catch (ex) {
         console.error(ex);
