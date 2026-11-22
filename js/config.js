@@ -66,7 +66,17 @@ window.GRAD_CONFIG = {
     // directions: [
     //   { from: "Từ cổng chính", steps: ["Đi thẳng tới toà A", "Rẽ trái, sảnh nằm bên phải"] },
     // ],
-    directions: [],
+    directions: [
+      {
+        from: "Đi theo đường Võ Oanh",
+        steps: [
+          "Tìm Ministop ở góc ngã tư Võ Oanh – Nguyễn Gia Trí",
+          "Vào cổng nhỏ ngay cạnh Ministop (cổng lớn ở giữa không vào được)",
+          "Đi theo lối bên trái Sảnh A vào sân trường, lễ tổ chức ở giữa sân",
+        ],
+      },
+    ],
+    parking: "Chỗ gửi xe: mình sẽ cập nhật sau nha", // để "" nếu không cần dòng này
   },
 
   thankYou: {

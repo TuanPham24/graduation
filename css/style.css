@@ -559,27 +559,70 @@ textarea:focus { box-shadow: 0 0 0 3px rgba(43, 63, 122, .15); }
 .loc { display: grid; grid-template-columns: 1.15fr 1fr; gap: clamp(30px, 5vw, 64px); align-items: center; }
 .map-card { position: relative; background: #fff; padding: 10px; box-shadow: var(--shadow); rotate: -1.5deg; }
 .map-doodle { display: block; width: 100%; height: auto; }
-.m-road { fill: none; stroke: #ddd5c4; stroke-width: 16; stroke-linecap: round; }
-.m-road.thin { stroke-width: 9; }
+.m-edge { fill: none; stroke: var(--ink); stroke-width: 19; stroke-linecap: round; }
+.m-edge.thin { stroke-width: 13; }
+.m-fill { fill: none; stroke: #e4dccb; stroke-width: 15.5; stroke-linecap: round; }
+.m-fill.thin { stroke-width: 9.5; }
 .m-b { stroke: var(--ink); stroke-width: 1.6; }
-.b1, .b4 { fill: #f3c95f; } .b2 { fill: #f2a6b8; } .b3 { fill: #f3c95f; } .b5 { fill: #9cc3ea; } .b6 { fill: #f2a6b8; }
-.m-park { fill: #b6dca4; stroke: var(--ink); stroke-width: 1.6; }
-.m-route { fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-dasharray: 7 7; stroke-linecap: round; animation: march 1.4s linear infinite; }
+.m-muted { fill: #ece5d5; stroke: rgba(29, 34, 48, .35); stroke-width: 1.2; }
+.m-campus { fill: rgba(95, 143, 208, .10); stroke: var(--navy); stroke-width: 1.6; stroke-dasharray: 6 5; }
+.m-yard { fill: #c9e2b8; stroke: var(--ink); stroke-width: 1.8; }
+.m-bld { fill: #dfe7f5; }
+.m-hall { fill: #c7d6ef; }
+.m-walk { fill: none; stroke: #fff; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.m-gate-closed { stroke: #8d8a84; stroke-width: 4; stroke-linecap: round; }
+.m-x { stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
+.m-label-xs { font-size: 8px; fill: var(--ink-soft); }
+.m-label-yard { font-size: 15px; }
+.m-gate { stroke: var(--red); stroke-width: 4; stroke-linecap: round; }
+.m-label { font-family: var(--font-hand); font-size: 12px; fill: var(--ink); }
+.m-label-b { font-family: var(--font-head); font-size: 15px; letter-spacing: .06em; }
+.m-label-sm { font-size: 11px; }
+.m-street { font-family: var(--font-hand); font-size: 10.5px; fill: var(--ink-soft); }
+.m-street.sm { font-size: 8px; }
+.m-step circle { fill: var(--navy); stroke: #fff; stroke-width: 1.5; }
+.m-step text { font-family: var(--font-head); font-size: 10px; fill: #fff; text-anchor: middle; }
+.m-compass path { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.m-compass text { font-family: var(--font-head); font-size: 10px; fill: var(--ink); }
+.m-route {
+  fill: none; stroke: var(--red); stroke-width: 2.6; stroke-linecap: round;
+  stroke-dasharray: .012 .012; animation: routeMarch 1.6s linear infinite;
+}
+@keyframes routeMarch { to { stroke-dashoffset: -.048; } }
 .m-pin path { fill: var(--red); stroke: var(--ink); stroke-width: 1.6; }
 .m-pin { animation: pinBounce 2.2s var(--ease) infinite; }
-.map-note { position: absolute; right: 5%; top: 6%; margin: 0; font-family: var(--font-hand); font-size: clamp(1.1rem, 2.6vw, 1.6rem); transform: rotate(-6deg); }
+.map-note { position: absolute; left: 5%; bottom: 6%; margin: 0; font-family: var(--font-hand); font-size: clamp(1.1rem, 2.6vw, 1.6rem); transform: rotate(-6deg); }
 .lined-note {
   position: relative; padding: 42px 28px 28px; rotate: 1.2deg; box-shadow: var(--shadow);
   background: #fdfbf6 repeating-linear-gradient(transparent 0 31px, rgba(43, 63, 122, .15) 31px 32px);
   background-position: 0 41px;
 }
 .lined-note p, .lined-note li { line-height: 32px; margin: 0; }
+/* three little campus polaroids tucked under the note */
+.loc-photos { position: relative; z-index: 2; display: flex; justify-content: center; margin: -22px 0 0; padding: 0 4px; }
+.loc-photo {
+  flex: 0 1 34%; margin: 0 -2%; padding: 6px 6px 0; background: #fff; box-shadow: var(--shadow-sm);
+  transition: transform .35s var(--ease), z-index 0s;
+}
+.loc-photo img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; }
+.loc-photo figcaption { font-family: var(--font-hand); font-size: .95rem; text-align: center; color: var(--ink); padding: 4px 2px 6px; line-height: 1.1; }
+.lp-1 { transform: rotate(-6deg) translateY(6px); }
+.lp-2 { transform: rotate(3deg) translateY(-4px); z-index: 1; }
+.lp-3 { transform: rotate(-2deg) translateY(10px); }
+.loc-photo:hover { transform: rotate(0) translateY(-8px) scale(1.06); z-index: 3; position: relative; }
 .lined-note .tape-top { top: -12px; left: 50%; margin-left: -37px; rotate: -3deg; }
 .ln-venue { font-family: var(--font-hand); font-size: 1.6rem; color: var(--navy); }
 .ln-address { color: var(--ink-soft); font-size: .95rem; }
 .ln-head { font-family: var(--font-hand); font-size: 1.4rem; text-decoration: underline; text-underline-offset: 4px; margin-top: 8px !important; }
 .ln-from { font-family: var(--font-hand); font-size: 1.25rem; color: var(--navy); }
 .lined-note ul { margin: 0; padding-left: 22px; font-family: var(--font-hand); font-size: 1.15rem; }
+.ln-steps { margin: 0; padding: 0; list-style: none; counter-reset: step; font-family: var(--font-hand); font-size: 1.15rem; }
+.ln-steps li { position: relative; padding-left: 30px; counter-increment: step; }
+.ln-steps li::before {
+  content: counter(step); position: absolute; left: 0; top: 6px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--navy); color: #fff; font-family: var(--font-head); font-size: .7rem; line-height: 20px; text-align: center;
+}
+.ln-parking { font-family: var(--font-hand); font-size: 1.1rem; color: var(--ink-soft); font-style: italic; }
 .lined-note .tba { font-family: var(--font-hand); font-size: 1.15rem; }
 .ln-contact { font-family: var(--font-hand); font-size: 1.25rem; color: var(--navy); text-decoration: underline; text-underline-offset: 4px; margin-top: 8px !important; }
 #locMapLink { margin-top: 16px; }

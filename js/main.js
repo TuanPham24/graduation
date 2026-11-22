@@ -127,14 +127,22 @@
         h.textContent = dir.from;
         dirBox.appendChild(h);
       }
-      const ul = document.createElement("ul");
+      // Numbered so each step matches the 1-2-3 badges on the map.
+      const ol = document.createElement("ol");
+      ol.className = "ln-steps";
       (dir.steps || []).forEach((s) => {
         const li = document.createElement("li");
         li.textContent = s;
-        ul.appendChild(li);
+        ol.appendChild(li);
       });
-      dirBox.appendChild(ul);
+      dirBox.appendChild(ol);
     });
+    if (loc.parking) {
+      const p = document.createElement("p");
+      p.className = "ln-parking";
+      p.textContent = loc.parking;
+      dirBox.appendChild(p);
+    }
 
     setText("musicTitle", C.musicTitle || "Nhạc nền");
     setText("musicArtist", C.musicArtist, "");
