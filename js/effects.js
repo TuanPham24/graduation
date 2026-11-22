@@ -261,7 +261,120 @@
     io.observe(section);
   }
 
+  // ---------- 6. Split-flap countdown digits ----------
+  // Sets el's text; when it changes, the old value flips away and the new one flips in.
+  function flipTo(el, text) {
+    text = String(text);
+    if (el.textContent === text) return;
+    if (reduced || !el.animate || !el.textContent || el.textContent === "--") {
+      el.textContent = text;
+      return;
+    }
+    const box = el.parentElement;
+    el.animate([{ transform: "perspective(180px) rotateX(0deg)" }, { transform: "perspective(180px) rotateX(88deg)" }], {
+      duration: 150,
+      easing: "ease-in",
+    }).onfinish = () => {
+      el.textContent = text;
+      el.animate(
+        [
+          { transform: "perspective(180px) rotateX(-88deg)" },
+          { transform: "perspective(180px) rotateX(12deg)", offset: 0.7 },
+          { transform: "perspective(180px) rotateX(0deg)" },
+        ],
+        { duration: 320, easing: "ease-out" }
+      );
+      if (box) box.animate([{ boxShadow: "4px 4px 0 #1d2230" }, { boxShadow: "2px 2px 0 #1d2230" }, { boxShadow: "4px 4px 0 #1d2230" }], { duration: 300 });
+    };
+  }
+
+  // ---------- 7. Wish flies in as a paper plane ----------
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function paperPlane(fromEl, toEl) {
+    if (reduced || !fromEl || !toEl) return;
+    // Bring the landing spot into view first so the guest sees the plane arrive.
+    const tr0 = toEl.getBoundingClientRect();
+    if (tr0.top < 60 || tr0.bottom > window.innerHeight - 20) {
+      toEl.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+      await wait(650);
+    }
+    const a = fromEl.getBoundingClientRect();
+    const b = toEl.getBoundingClientRect();
+    const x0 = a.left + a.width / 2, y0 = a.top + a.height / 2;
+    const x2 = b.left + b.width / 2, y2 = b.top + b.height / 2;
+    // Arc up and over, a little to the side.
+    const x1 = (x0 + x2) / 2 + (x2 >= x0 ? -120 : 120);
+    const y1 = Math.min(y0, y2) - 160;
+
+    const plane = document.createElement("div");
+    plane.className = "fx-plane";
+    plane.innerHTML =
+      '<svg viewBox="0 0 48 32" width="48" height="32"><path d="M2 16 L46 2 L30 30 L22 19 Z" fill="#fffdf8" stroke="#1d2230" stroke-width="1.6" stroke-linejoin="round"/><path d="M22 19 L46 2 M22 19 L20 28 L26 22" fill="none" stroke="#1d2230" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+    document.body.appendChild(plane);
+
+    const dur = 1150;
+    const t0 = performance.now();
+    await new Promise((resolve) => {
+      (function frame(now) {
+        const t = Math.min(1, (now - t0) / dur);
+        const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        const u = 1 - e;
+        const x = u * u * x0 + 2 * u * e * x1 + e * e * x2;
+        const y = u * u * y0 + 2 * u * e * y1 + e * e * y2;
+        const dx = 2 * u * (x1 - x0) + 2 * e * (x2 - x1);
+        const dy = 2 * u * (y1 - y0) + 2 * e * (y2 - y1);
+        const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
+        const scale = 0.8 + Math.sin(Math.PI * e) * 0.6;
+        plane.style.transform = `translate(${x - 24}px, ${y - 16}px) rotate(${ang}deg) scale(${scale})`;
+        plane.style.opacity = t > 0.9 ? (1 - t) * 10 : 1;
+        if (t < 1) requestAnimationFrame(frame);
+        else resolve();
+      })(t0);
+    });
+    plane.remove();
+  }
+
+  // ---------- 8. Collage photos tilt toward the pointer (desktop only) ----------
+  function setupTilt() {
+    const box = document.getElementById("collage");
+    if (reduced || !box || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    let active = null;
+    let frame = 0;
+    let last = null;
+    const reset = (el) => {
+      el.style.transform = "";
+      el.style.transition = "";
+      el.style.removeProperty("--glare");
+    };
+    box.addEventListener("pointermove", (e) => {
+      const item = e.target.closest(".cl-item.in");
+      if (active && active !== item) reset(active);
+      active = item;
+      if (!item) return;
+      last = e;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        if (!active || !last) return;
+        const r = active.getBoundingClientRect();
+        const px = (last.clientX - r.left) / r.width; // 0..1
+        const py = (last.clientY - r.top) / r.height;
+        const max = active.classList.contains("cl-big") ? 6 : 12;
+        active.style.transition = "transform .12s linear, rotate .45s, scale .45s, box-shadow .3s";
+        active.style.transform = `perspective(700px) rotateX(${((0.5 - py) * max).toFixed(2)}deg) rotateY(${((px - 0.5) * max).toFixed(2)}deg)`;
+        active.style.setProperty("--gx", `${(px * 100).toFixed(1)}%`);
+        active.style.setProperty("--gy", `${(py * 100).toFixed(1)}%`);
+        active.style.setProperty("--glare", "1");
+      });
+    });
+    box.addEventListener("pointerleave", () => {
+      if (active) reset(active);
+      active = null;
+    });
+  }
+
   setupMapWalk();
   setupThanksToss();
-  window.FX = { crackSeal, capToss };
+  setupTilt();
+  window.FX = { crackSeal, capToss, flipTo, paperPlane };
 })();

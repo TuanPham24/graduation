@@ -416,10 +416,11 @@
         clearInterval(timer);
         return;
       }
-      $("cdDays").textContent = Math.floor(diff / 86400000);
-      $("cdHours").textContent = pad(Math.floor((diff / 3600000) % 24));
-      $("cdMins").textContent = pad(Math.floor((diff / 60000) % 60));
-      $("cdSecs").textContent = pad(Math.floor((diff / 1000) % 60));
+      const show = (id, v) => (window.FX ? window.FX.flipTo($(id), v) : ($(id).textContent = v));
+      show("cdDays", Math.floor(diff / 86400000));
+      show("cdHours", pad(Math.floor((diff / 3600000) % 24)));
+      show("cdMins", pad(Math.floor((diff / 60000) % 60)));
+      show("cdSecs", pad(Math.floor((diff / 1000) % 60)));
     };
     const timer = setInterval(tick, 1000);
     tick();
@@ -603,9 +604,16 @@
       btn.textContent = "Đang gửi...";
       try {
         await send(wish);
-        wall.prepend(noteEl(wish, count++));
+        const note = noteEl(wish, count++);
+        note.classList.add("incoming");
+        wall.prepend(note);
         wall.scrollTo({ left: 0, behavior: "smooth" });
         queueCount();
+        empty.hidden = true;
+        // The wish is already saved; a failed animation must not show the error message.
+        if (window.FX) await window.FX.paperPlane(btn, note).catch((ex) => console.warn(ex));
+        note.classList.remove("incoming");
+        note.classList.add("landed");
         kid.react("Cảm ơn lời chúc của bạn nhiều lắm!", "happy");
         empty.hidden = true;
         form.elements.message.value = "";
