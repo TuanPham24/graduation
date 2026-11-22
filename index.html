@@ -20,7 +20,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,20 95,38 50,56 5,38' fill='%231d2230'/%3E%3Cpath d='M28 47v18c0 9 44 9 44 0V47L50 56z' fill='%232b3f7a'/%3E%3Cpath d='M50 38l30 8v22' stroke='%23a9c9ec' stroke-width='5' fill='none'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Great+Vibes&family=Patrick+Hand&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,500&family=UnifrakturMaguntia&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Great+Vibes&family=Patrick+Hand&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,500&family=UnifrakturMaguntia&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body class="gated">
@@ -107,12 +107,12 @@
       <div class="wrap">
         <div class="calendar reveal">
           <svg class="cal-lines" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 92 C 300 70, 700 60, 1000 40" />
-            <path d="M0 470 C 320 470, 650 480, 1000 500" />
-            <path d="M265 0 C 262 180, 270 380, 285 560" />
-            <path d="M770 0 C 768 200, 760 380, 755 560" />
-            <path d="M265 168 C 450 162, 620 158, 770 152" />
-            <path d="M770 380 C 860 378, 940 376, 1000 375" />
+            <path pathLength="1" d="M-420 170 C 100 130, 600 75, 1420 -10" />
+            <path pathLength="1" d="M235 -80 C 245 160, 260 400, 280 600" />
+            <path pathLength="1" d="M745 -80 C 755 160, 770 400, 790 600" />
+            <path pathLength="1" d="M-420 560 C 200 540, 700 510, 1420 455" />
+            <path pathLength="1" d="M240 205 C 420 192, 600 178, 765 165" />
+            <path pathLength="1" d="M770 395 C 950 382, 1150 368, 1420 350" />
           </svg>
           <p class="cal-save"><span class="initial">S</span>ave</p>
           <svg class="cal-star" width="64" height="64" aria-hidden="true"><use href="#i-star"/></svg>
@@ -139,17 +139,31 @@
     <!-- 3. WELCOME + ENVELOPE -->
     <section id="letter" class="page">
       <div class="wrap welcome">
+        <svg class="welcome-doodle reveal" viewBox="0 0 200 140" aria-hidden="true">
+          <path class="wd-line" pathLength="1" d="M8 96 C 40 40, 90 30, 110 62 C 126 88, 96 104, 92 82 C 88 58, 140 40, 188 52" />
+          <path class="wd-head" pathLength="1" d="M174 40 L 190 52 L 174 64" />
+          <path class="wd-star" d="M40 18 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" />
+          <path class="wd-star" d="M150 104 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" />
+        </svg>
         <div class="welcome-text reveal">
           <h2 class="display"><span class="initial">W</span>elcome</h2>
           <p class="script-sub">to my magical world!</p>
 
-          <div class="music-card" id="musicCard" hidden>
-            <img class="mc-cover" src="assets/gallery/pic10.jpg" alt="" width="64" height="64" loading="lazy" decoding="async" />
-            <div class="mc-meta">
-              <b id="musicTitle"></b>
-              <span id="musicArtist"></span>
-              <span class="mc-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <div class="music-card cassette" id="musicCard" hidden>
+            <span class="tape cs-tape" aria-hidden="true"></span>
+            <div class="cs-label">
+              <span class="cs-side" aria-hidden="true">A</span>
+              <div class="mc-meta">
+                <b id="musicTitle"></b>
+                <span id="musicArtist"></span>
+              </div>
+              <div class="cs-window" aria-hidden="true">
+                <span class="cs-reel"></span>
+                <span class="cs-film"></span>
+                <span class="cs-reel"></span>
+              </div>
             </div>
+            <span class="cs-foot" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
             <button type="button" class="mc-play" id="musicCardBtn" aria-label="Bật nhạc">
               <svg class="ic-play" width="22" height="22"><use href="#i-play"/></svg>
               <svg class="ic-pause" width="22" height="22"><use href="#i-pause"/></svg>
@@ -177,9 +191,10 @@
             <span class="env-front"></span>
             <span class="env-lines" aria-hidden="true"></span>
             <span class="env-seal"><svg width="24" height="18"><use href="#i-cap"/></svg></span>
+            <span class="env-stamp" aria-hidden="true"><svg width="26" height="20"><use href="#i-cap"/></svg><small>2026</small></span>
+            <span class="env-postmark" aria-hidden="true"><svg viewBox="0 0 140 60" width="140" height="60"><circle cx="30" cy="30" r="24" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="30" cy="30" r="18" fill="none" stroke="currentColor" stroke-width="1"/><text x="30" y="34" text-anchor="middle" font-size="9" fill="currentColor" font-family="Patrick Hand, cursive">TP.HCM</text><path d="M58 18q10-7 20 0t20 0 20 0 20 0M58 30q10-7 20 0t20 0 20 0 20 0M58 42q10-7 20 0t20 0 20 0 20 0" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
             <span class="env-to">Gửi: <b id="envTo"></b></span>
           </button>
-          <p class="stage-hint">Chạm vào phong bì để mở thư nhé</p>
         </div>
       </div>
     </section>
@@ -323,6 +338,7 @@
       </div>
       <div class="wrap">
         <div class="wall" id="wall" aria-live="polite"></div>
+        <p class="wall-count" id="wallCount" aria-hidden="true" hidden></p>
         <p class="wall-empty" id="wallEmpty" hidden>Chưa có lời chúc nào — bạn hãy là người đầu tiên nhé!</p>
       </div>
     </section>

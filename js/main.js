@@ -301,20 +301,68 @@
       moodTimer = setTimeout(() => el.classList.remove("cheer", "happy"), 2600);
     }
 
+    // On wide screens the kid walks over to stand just left of the envelope.
+    function place(on) {
+      let x = 0;
+      const wide = window.innerWidth > 820;
+      if (on && wide) {
+        const r = env.getBoundingClientRect();
+        const target = Math.min(r.left - el.offsetWidth + 20, window.innerWidth - el.offsetWidth - 10);
+        x = Math.max(0, target - 10);
+      } else if (on) {
+        // Phones: the envelope fills the width, so run to the middle just under it.
+        x = Math.max(0, (window.innerWidth - el.offsetWidth) / 2 - 10);
+      }
+      el.classList.toggle("beside", on && wide && x > 260);
+      el.classList.toggle("center", on && !wide);
+      document.body.classList.toggle("kid-center", on && !wide);
+      el.style.setProperty("--kid-x", x + "px");
+    }
+
+    let reminding = false;
+    let remindTimer;
+    function remind(on) {
+      if (!on && !reminding) return;
+      clearTimeout(remindTimer);
+      reminding = on;
+      el.classList.toggle("remind", on);
+      if (on) {
+        el.classList.remove("point");
+        say("Ơ, bạn quên mở thư rồi kìa! Bấm vào mình để quay lại nha", 10000);
+        remindTimer = setTimeout(() => remind(false), 10000);
+      } else if (bubble.classList.contains("show") && !pinned) {
+        hush();
+      }
+    }
+
     function point(on) {
+      if (on && reminding) remind(false);
       el.classList.toggle("point", on);
-      if (on) say("Bấm vào phong bì để mở thư nha!", 0);
+      place(on);
+      if (on) say("Thư của bạn ở đây nè, bấm vào phong bì nha!", 0);
       else if (pinned) hush();
     }
 
     const pokes = ["Hihi, nhột quá!", "Nhớ đến dự lễ của mình nha!", "Kéo xuống xem tiếp đi bạn ơi!", "Mình tốt nghiệp rồi nè!"];
     let pokeIndex = 0;
-    el.addEventListener("click", () => react(pokes[pokeIndex++ % pokes.length], "cheer"));
+    el.addEventListener("click", () => {
+      if (reminding) {
+        remind(false);
+        env.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      react(pokes[pokeIndex++ % pokes.length], "cheer");
+    });
+
+    window.addEventListener("resize", () => { if (el.classList.contains("point")) place(true); });
 
     if ("IntersectionObserver" in window) {
       new IntersectionObserver(([e]) => {
         if (document.body.classList.contains("gated")) return;
-        point(e.isIntersecting && !env.classList.contains("open"));
+        const closed = !env.classList.contains("open");
+        point(e.isIntersecting && closed);
+        // Scrolled past the envelope without opening it → nudge the guest back.
+        if (!e.isIntersecting && closed && e.boundingClientRect.top < 0) remind(true);
       }, { rootMargin: "-35% 0px -35% 0px" }).observe($("letter"));
     }
 
@@ -329,6 +377,7 @@
       const wasOpen = env.classList.contains("open");
       env.classList.add("open");
       kid.point(false);
+      if (!$("musicCard").hidden) $("musicHint").hidden = false;
       setTimeout(() => {
         if (section.hidden) {
           section.hidden = false;
@@ -491,10 +540,34 @@
     const err = $("wishError");
     let count = 0;
 
+    // Phone layout: the wall is a horizontal swipe row; show "3 / 27 lời chúc" under it.
+    const counter = $("wallCount");
+    const mobile = window.matchMedia("(max-width: 600px)");
+    let countFrame = 0;
+    function updateCount() {
+      countFrame = 0;
+      const notes = wall.children;
+      counter.hidden = !mobile.matches || notes.length < 2;
+      if (counter.hidden) return;
+      const mid = wall.getBoundingClientRect().left + wall.clientWidth / 2;
+      let current = 0, best = Infinity;
+      for (let i = 0; i < notes.length; i++) {
+        const r = notes[i].getBoundingClientRect();
+        const d = Math.abs(r.left + r.width / 2 - mid);
+        if (d < best) { best = d; current = i; }
+      }
+      const atEnd = current === notes.length - 1;
+      counter.textContent = `${current + 1} / ${notes.length} lời chúc${atEnd ? "" : "  ·  vuốt để xem thêm →"}`;
+    }
+    const queueCount = () => { if (!countFrame) countFrame = requestAnimationFrame(updateCount); };
+    wall.addEventListener("scroll", queueCount, { passive: true });
+    mobile.addEventListener("change", queueCount);
+
     loadWishes()
       .then((list) => {
         list.forEach((w) => wall.appendChild(noteEl(w, count++)));
         empty.hidden = count > 0;
+        queueCount();
       })
       .catch((ex) => {
         console.error(ex);
@@ -519,6 +592,8 @@
       try {
         await send(wish);
         wall.prepend(noteEl(wish, count++));
+        wall.scrollTo({ left: 0, behavior: "smooth" });
+        queueCount();
         kid.react("Cảm ơn lời chúc của bạn nhiều lắm!", "happy");
         empty.hidden = true;
         form.elements.message.value = "";
@@ -553,7 +628,8 @@
     const card = $("musicCard");
     $("musicBtn").hidden = false;
     card.hidden = false;
-    $("musicHint").hidden = false;
+    // The "click here for music" note waits until the envelope is opened, so it doesn't compete with it.
+    $("musicHint").hidden = !$("envelope").classList.contains("open");
 
     const pointer = $("musicPointer");
     const mBtn = $("musicBtn");

@@ -29,11 +29,20 @@
     document.body.appendChild(wrap);
 
     let player = null;
-    let pendingPlay = false;
+    let failure = null; // set once YouTube refuses to play this video
+    let waiters = []; // play() calls waiting for the video to actually start
 
+    const settle = (err) => {
+      const list = waiters;
+      waiters = [];
+      list.forEach((w) => (err ? w.reject(err) : w.resolve()));
+    };
+
+    // Rejects if the video can't be embedded (removed, private, or embedding disabled by its owner),
+    // so the caller can tell the guest instead of silently doing nothing.
     const readyPromise = loadApi().then(
       (YT) =>
-        new Promise((resolve) => {
+        new Promise((resolve, reject) => {
           player = new YT.Player(host, {
             width: "2",
             height: "2",
@@ -51,9 +60,15 @@
               origin: location.origin,
             },
             events: {
-              onReady: () => {
-                if (pendingPlay) player.playVideo();
-                resolve();
+              onReady: () => resolve(),
+              onStateChange: (e) => {
+                if (e.data === YT.PlayerState.PLAYING) settle();
+              },
+              // 2: bad id, 5: HTML5 error, 100: not found/private, 101/150: owner disabled embedding
+              onError: (e) => {
+                failure = new Error(`YouTube player error ${e.data}`);
+                reject(failure);
+                settle(failure);
               },
             },
           });
@@ -61,12 +76,19 @@
     );
 
     return {
+      // Resolves only once audio is really playing; rejects if YouTube refuses the video.
       play() {
-        pendingPlay = true;
-        return readyPromise.then(() => player.playVideo());
+        if (failure) return Promise.reject(failure);
+        return readyPromise.then(
+          () =>
+            new Promise((resolve, reject) => {
+              waiters.push({ resolve, reject });
+              player.playVideo();
+            })
+        );
       },
       pause() {
-        pendingPlay = false;
+        settle(new Error("paused"));
         if (player && player.pauseVideo) player.pauseVideo();
       },
     };
