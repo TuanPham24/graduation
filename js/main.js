@@ -468,6 +468,12 @@
     form.classList.add("shake");
   }
 
+  // Guests are told apart by a random id kept on their device, never by name:
+  // many people share a name. Re-sending with the same id updates their row.
+  const norm = (n) => String(n || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("vi");
+  const newId = () =>
+    (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+
   // ---------- RSVP ----------
   function setupRsvp(kid) {
     const form = $("rsvpForm");
@@ -494,9 +500,6 @@
     // Each answer carries a random id; re-sending it updates that guest's row in
     // the sheet instead of adding a second one, and two people who happen to share
     // a name (on different devices) get different ids, so they stay separate rows.
-    const norm = (n) => String(n || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("vi");
-    const newId = () =>
-      (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
     function allAnswers() {
       const map = store.get("rsvps");
       if (map && typeof map === "object") return map;
@@ -504,14 +507,23 @@
       return legacy && legacy.name ? { [norm(legacy.name)]: legacy } : {};
     }
     let guest = "";
+    // Put an answer (or a blank one) into the form fields.
+    function fillForm(answer) {
+      form.elements.name.value = (answer && answer.name) || guest;
+      const attending = (answer && answer.attending) || "yes";
+      form.querySelectorAll('input[name="attending"]').forEach((r) => (r.checked = r.value === attending));
+      form.elements.note.value = (answer && answer.note) || "";
+    }
     function sync(name) {
       guest = name || "";
       const saved = allAnswers()[norm(guest)];
+      fillForm(saved); // a new guest never sees the previous guest's note or choice
       if (saved) showThanks(saved);
       else showForm();
     }
 
     $("rsvpEdit").addEventListener("click", () => {
+      fillForm(allAnswers()[norm(guest)]); // edit starts from what they sent
       showForm();
       form.classList.add("in");
     });
@@ -574,6 +586,8 @@
     from.className = "from";
     from.textContent = `— ${w.name}`;
     n.append(p, from);
+    n.dataset.name = w.name;
+    n.dataset.message = w.message;
     return n;
   }
 
@@ -582,7 +596,28 @@
     const empty = $("wallEmpty");
     const form = $("wishForm");
     const err = $("wishError");
+    const btn = form.querySelector('button[type="submit"]');
     let count = 0;
+
+    // One wish per guest: sending again edits it (same sheet row, same note on the wall).
+    let guest = "";
+    const allWishes = () => {
+      const map = store.get("wishes");
+      return map && typeof map === "object" ? map : {};
+    };
+    const mine = () => allWishes()[norm(guest)];
+    const idleLabel = () => (mine() ? "Cập nhật lời chúc" : "Gửi lời chúc");
+    function findNote(w) {
+      if (!w) return null;
+      return [...wall.children].find((n) => n.dataset.name === w.name && n.dataset.message === w.message) || null;
+    }
+    function sync(name) {
+      guest = name || "";
+      const saved = mine();
+      form.elements.message.value = saved ? saved.message : "";
+      if (saved) form.elements.name.value = saved.name;
+      btn.textContent = idleLabel();
+    }
 
     // Phone layout: the wall is a horizontal swipe row; show "3 / 27 lời chúc" under it.
     const counter = $("wallCount");
@@ -629,13 +664,23 @@
         message: String(fd.get("message") || "").trim(),
       };
       if (!wish.name || !wish.message) return fail(form, err, "Bạn điền tên và lời chúc giúp mình nhé.");
+      const key = norm(guest || wish.name);
+      const prev = allWishes()[key];
+      wish.id = (prev && prev.id) || newId();
 
-      const btn = form.querySelector('button[type="submit"]');
       btn.disabled = true;
       btn.textContent = "Đang gửi...";
       try {
         await send(wish);
-        const note = noteEl(wish, count++);
+        if (!DEMO) {
+          const map = allWishes();
+          map[key] = { id: wish.id, name: wish.name, message: wish.message };
+          store.set("wishes", map);
+        }
+        const old = findNote(prev);
+        if (old) old.remove();
+        else count++;
+        const note = noteEl(wish, count - 1);
         note.classList.add("incoming");
         wall.prepend(note);
         // Phones: jump the swipe row back to the start at once, so the plane aims at
@@ -649,18 +694,19 @@
         note.classList.add("landed");
         kid.react("Cảm ơn lời chúc của bạn nhiều lắm!", "happy");
         empty.hidden = true;
-        form.elements.message.value = "";
         toast(DEMO
           ? "Chế độ demo: chưa kết nối Google Sheet nên lời chúc chưa được lưu."
-          : "Lời chúc của bạn đã được ghim lên tường. Cảm ơn bạn!");
+          : prev
+            ? "Lời chúc của bạn đã được cập nhật. Cảm ơn bạn!"
+            : "Lời chúc của bạn đã được ghim lên tường. Cảm ơn bạn!");
       } catch (ex) {
         console.error(ex);
         fail(form, err, "Ối, có lỗi rồi. Bạn thử lại giúp mình nhé.");
       } finally {
         btn.disabled = false;
-        btn.textContent = "Gửi lời chúc";
+        btn.textContent = idleLabel();
       }
-    });
+    });    return { sync };
   }
 
   // ---------- Music ----------
@@ -735,10 +781,11 @@
   setupEnvelope(kid);
   setupCountdown();
   const rsvp = setupRsvp(kid);
-  setupWishes(kid);
+  const wishes = setupWishes(kid);
   const music = setupMusic();
   setupGate((name) => {
     rsvp.sync(name);
+    wishes.sync(name);
     if (music) music.start();
     setTimeout(() => kid.react(`Chào ${name}! Kéo xuống xem thiệp với mình nha!`, "happy"), 700);
   });
